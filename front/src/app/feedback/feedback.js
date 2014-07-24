@@ -19,7 +19,7 @@ angular.module('app.feedback', [
 /**
  * And of course we define a controller for our route.
  */
-    .controller('FeedbackCtrl', function HomeController($scope, api, Feedback, jlog) {
+    .controller('FeedbackCtrl', function HomeController($scope, Feedback, jlog) {
         var $log = jlog.loggerWithName('feedback');
 
         $scope.feedback = [];

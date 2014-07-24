@@ -39,85 +39,9 @@ angular.module('app.home', [
 /**
  * And of course we define a controller for our route.
  */
-    .controller('HomeCtrl', function HomeController($scope, api, $log, Breakdown, errors, loading) {
+    .controller('HomeCtrl', function HomeController($scope, $log, errors, loading) {
 
 
-        $scope.breakdowns = [];
-        $scope.count = 0;
-        $scope.numPages = 0;
-        $scope.currentPage = 1;
-
-        function constructBreakdown(breakdown, err, data) {
-            if (!err) {
-                var thumbnails = data.thumbnails;
-                if (thumbnails) {
-                    var chosenThumbnail = {area: 0};
-                    for (var i = 0; i < thumbnails.length; i++) {
-                        var t = thumbnails[i];
-                        var height = t.height || 0;
-                        var width = t.width || 0;
-                        var area = height * width;
-                        if (area > chosenThumbnail.area) {
-                            chosenThumbnail = {url: t.url, area: area};
-                        }
-                    }
-                    if (chosenThumbnail.url) {
-                        breakdown.thumbnail = chosenThumbnail.url;
-                    }
-                    else {
-                        // TODO: Place error somewhere?
-                    }
-
-                }
-                else {
-                    // TODO: Place error somewhere?
-                }
-
-            }
-            else {
-                // TODO: Place error somewhere?
-            }
-        }
-
-        $scope.$watch('breakdowns', function () {
-            var chunks = [];
-            var currentChunk;
-            var list = $scope.breakdowns;
-            for (var i = 0; i < list.length; i++) {
-                if (i % 3 === 0) {
-                    currentChunk = [];
-                    chunks.push(currentChunk);
-                }
-                currentChunk.push(list[i]);
-            }
-            $scope.chunkedBreakdowns = chunks;
-        }, true);
-
-        function getBreakdowns(page) {
-            var pageSize = 3;
-            var breakdowns = Breakdown.list({
-                page_size: pageSize,
-                page: page,
-                ordering: '-created_at'
-            }, function () {
-                $scope.breakdowns = [];
-                $scope.count = breakdowns.count;
-                $scope.numPages = Math.ceil($scope.count / pageSize);
-                for (var i = 0; i < breakdowns.results.length; i++) {
-                    var b = breakdowns.results[i];
-                    api.youtubeMetaData(b.url, _.partial(constructBreakdown, b));
-                    $scope.breakdowns.push(b);
-                }
-            }, function (res) {
-                errors.serverErrorFromResult(res);
-            });
-        }
-
-        $scope.pageChanged = function (page) {
-            getBreakdowns(page);
-        };
-
-        getBreakdowns(1);
 
     })
 

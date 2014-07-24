@@ -38,11 +38,6 @@ angular.module('app.profile', [
             });
         }
 
-        $scope.breakdownPagination = {
-            count: 0,
-            currentPage: 1
-        };
-
         $scope.feedbackPagination = {
             count: 0,
             currentPage: 1

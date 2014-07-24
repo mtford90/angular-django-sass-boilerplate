@@ -2,9 +2,7 @@ from rest_framework.reverse import reverse
 from rest_framework.status import is_success
 from rest_framework.test import APITransactionTestCase
 
-from server.models import CustomUser, Feedback, Vote
-
-
+from api.models import CustomUser, Feedback, Vote
 
 
 class TestVotes(APITransactionTestCase):

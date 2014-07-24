@@ -34,7 +34,7 @@ class CustomUser(AbstractUser, CommonFields):
             return self.profile_photo.url
         except ValueError:
             # No file
-            return settings.STATIC_URL + 'server/anon.png'
+            return settings.STATIC_URL + 'api/anon.png'
 
 
 class Feedback(CommonFields):

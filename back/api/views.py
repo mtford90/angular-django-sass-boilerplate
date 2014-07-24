@@ -5,9 +5,9 @@ from django_filters import FilterSet
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-from server.filters import CustomDateTimeFilter
-from server.models import CustomUser, Feedback, Vote, Comment, FeedbackAttachment
-from server.serializers import UserSerialiser, FeedbackSerialiser, VoteSerialiser, CommentSerialiser, FeedbackAttachmentSerialiser
+from api.filters import CustomDateTimeFilter
+from api.models import CustomUser, Feedback, Vote, Comment, FeedbackAttachment
+from api.serializers import UserSerialiser, FeedbackSerialiser, VoteSerialiser, CommentSerialiser, FeedbackAttachmentSerialiser
 
 
 Logger = logging.getLogger('api')

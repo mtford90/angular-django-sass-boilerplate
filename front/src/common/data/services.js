@@ -60,64 +60,6 @@ mod.factory('dataAccess', function ($http, $log) {
     };
 });
 
-mod.provider('api', function () {
-    this.$get = function ($log, dataAccess) {
-        return {
-            /**
-             * Returns the first 9 breakdowns on the server.
-             * @param callback
-             * @returns {*}
-             */
-            getBreakdowns: function (callback) {
-                return dataAccess.GET('/api/breakdowns/?page_size=3', function (err, data) {
-                    if (!err) {
-                        if (callback) {
-                            callback(err, data.results);
-                        }
-                    }
-                    else if (callback) {
-                        callback(err, data);
-                    }
-                });
-            },
-            youtubeMetaData: function (url, callback) {
-                return dataAccess.GET('/api/youtube/?url=' + url, callback);
-            },
-            getBreakdown: function (ident, callback) {
-                return dataAccess.GET('/api/breakdowns/' + ident + '/', callback);
-            },
-            getFeedback: function (callback) {
-                return dataAccess.GET('/api/feedback/?page_size=10', function (err, data) {
-                    if (!err) {
-                        if (callback) {
-                            callback(err, data.results);
-                        }
-                    }
-                    else if (callback) {
-                        callback(err, data);
-                    }
-                });
-            },
-            getBugs: function (callback) {
-                return dataAccess.GET('/api/bugs/?page_size=10', function (err, data) {
-                    if (!err) {
-                        if (callback) {
-                            callback(err, data.results);
-                        }
-                    }
-                    else if (callback) {
-                        callback(err, data);
-                    }
-                });
-            }
-        };
-    };
-});
-
-//'session_key': session_key,
-//    'expiry_age': expire_age,
-//    'expire_date': expire_date,
-
 /**
  * Simple container for the users session. A singleton.
  */

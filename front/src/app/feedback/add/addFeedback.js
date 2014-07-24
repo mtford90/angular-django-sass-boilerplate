@@ -17,7 +17,7 @@ angular.module('app.feedback.addFeedback', [
         });
     })
 
-    .controller('AddFeedbackCtrl', function ($scope, api, Feedback, $log, errors,
+    .controller('AddFeedbackCtrl', function ($scope,  Feedback, $log, errors,
                                              $stateParams, $state, $upload, $cookies) {
         var id = $stateParams.Id;
 

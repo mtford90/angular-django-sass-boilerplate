@@ -41,7 +41,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'server',
+    'api',
     'rest_framework',
     'south'
 )
@@ -177,4 +177,4 @@ LOGGING = {
     },
 }
 
-AUTH_USER_MODEL = 'server.CustomUser'
+AUTH_USER_MODEL = 'api.CustomUser'

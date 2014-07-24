@@ -1,7 +1,7 @@
 from django.core.urlresolvers import reverse
 from rest_framework.status import is_success
 from rest_framework.test import APITransactionTestCase
-from server.models import CustomUser
+from api.models import CustomUser
 
 
 class TestFeedback(APITransactionTestCase):

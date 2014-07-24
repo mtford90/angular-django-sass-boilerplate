@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from server.models import CustomUser, Feedback, Comment, Vote, FeedbackAttachment
+from api.models import CustomUser, Feedback, Comment, Vote, FeedbackAttachment
 
 
 class UserSerialiser(serializers.ModelSerializer):

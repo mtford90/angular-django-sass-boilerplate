@@ -73,24 +73,18 @@ module.exports = {
             'vendor/angular-cookies/angular-cookies.js',
             'vendor/angular-resource/angular-resource.js',
             'vendor/angular-ui-utils/modules/route/route.js',
-            'vendor/pen/src/pen.js',
-            'vendor/pen/src/markdown.js',
             'vendor/summernote/dist/summernote.js',
             'vendor/bootstrap/dist/js/bootstrap.js',
             'vendor/angular-summernote/src/angular-summernote.js',
-            'vendor/modernizr/modernizr.js',
-            'vendor/seiyria-bootstrap-slider/js/bootstrap-slider.js'
+            'vendor/modernizr/modernizr.js'
         ],
         css: [
             'vendor/bootstrap/dist/css/*.css*',
-            'vendor/pen/src/pen.css',
-            'vendor/summernote/dist/summernote.css',
-            'vendor/seiyria-bootstrap-slider/css/bootstrap-slider.css'
+            'vendor/summernote/dist/summernote.css'
         ],
         sass: [
         ],
         assets: [
-            'vendor/pen/src/font/*',
             'vendor/bootstrap/dist/fonts/*'
         ]
     }

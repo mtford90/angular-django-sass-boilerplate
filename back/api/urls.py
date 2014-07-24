@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.routers import DefaultRouter
 from rest_framework.views import APIView
-from server import views
+from api import views
 
-from server.views import UserViewSet
+from api.views import UserViewSet
 
 
 class AppRouter(DefaultRouter):
@@ -47,7 +47,7 @@ router.register(r'users', views.UserViewSet)
 router.register(r'comments', views.CommentViewSet)
 router.register(r'feedback_attachments', views.FeedbackAttachmentViewSet)
 
-urlpatterns = patterns('server.views',
+urlpatterns = patterns('api.views',
                        url(r'', include(router.urls)),
                        url(r'login/$', UserViewSet.as_view({'post': 'login'}), name='login'),
                        url(r'verify/$', UserViewSet.as_view({'get': 'verify'}), name='verify'),
