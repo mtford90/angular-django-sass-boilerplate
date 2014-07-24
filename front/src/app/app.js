@@ -80,7 +80,7 @@ angular.module('app', [
         $log.info('Browser detected: ', sayswho);
 
         $rootScope.errors = [];
-        $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+        $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams, $state) {
             if (angular.isDefined(toState.data.pageTitle)) {
                 $scope.pageTitle = toState.data.pageTitle + ' | app';
             }
@@ -103,5 +103,17 @@ angular.module('app', [
         $rootScope.clearError = function (index) {
             $rootScope.errors.splice(index);
         };
+
+        $scope.logout = function () {
+            AuthService.logout(function (err) {
+                if (!err) {
+                    $state.go('login');
+                }
+                else {
+                    // TODO: Inject the error somewhere.
+                }
+            });
+        };
+
     });
 

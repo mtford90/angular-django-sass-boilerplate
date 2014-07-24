@@ -51,14 +51,16 @@
                     </a>
                 </li>
                 <li ui-sref-active="active">
-                    <a href ui-sref="login" ng-if="browserSupported">
-                        <div ng-if="currentUser">
-                            Logged in as {{currentUser.username}}
-                        </div>
-                        <div ng-if="!currentUser">
-                            Login
-                        </div>
-                    </a>
+                        <a href ui-sref="login" ng-if="browserSupported" >
+                            <div ng-if="currentUser">
+                                {{currentUser.username}}
+                            </div>
+                            <div ng-if="!currentUser">
+                                Login
+                            </div>
+                        </a>
+
+                    <!--<a href ng-click="logout()">logout</a>-->
                     <a href ng-if="!browserSupported">
                         Login
                     </a>

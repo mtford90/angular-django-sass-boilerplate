@@ -1,6 +1,6 @@
 <div id="profile">
     <div class="alert-danger" role="alert"></div>
-    <div id="current-user-profile">
+    <div id="current-user-profile" ng-if="currentUser || id">
         <div class="row">
             <div class="col-md-2">
                 <div ng-show="!dropSupported" class="alert alert-danger alert-dismissible" role="alert"
@@ -16,25 +16,29 @@
                 <div ng-file-drop="onFileSelect($files)">
                     <img id="profile-photo" ng-src="{{user.profile_photo_url}}">
                 </div>
-                <h2 content-editable-directive id="username" name="username" on-change="usernameChanged"
-                    ng-if="(!id && currentUser) || currentUser.id == id"
-                    value="user.username">
+                <h3 content-editable-directive
+                    id="name"
+                    name="name"
+                    on-change="nameChanged"
+                    value="user.name"
+                    editable="editable()">
                     {{value}}
-                </h2>
-                <h2 ng-if="id && currentUser.id != id">
-                    {{user.username}}
-                </h2>
+                </h3>
+                <h3 content-editable-directive
+                    id="username"
+                    name="username"
+                    on-change="usernameChanged"
+                    value="user.username"
+                    editable="editable()">
+                    {{value}}
+                </h3>
                 <div>
-            <span ng-if="(!id && currentUser) || currentUser.id == id" content-editable-directive id="email"
+            <span content-editable-directive
+                  id="email"
                   name="email" on-change="emailChanged"
-                  value="user.email"></span>
-            <span ng-if="id && currentUser.id != id">
-                {{user.email}}
-            </span>
+                  value="user.email"
+                  editable="editable()"></span>
                 </div>
-                <button ng-click="logout()" ng-if="(!id && currentUser) || currentUser.id == id">
-                    Logout
-                </button>
             </div>
             <div class="col-md-10">
                 <tabset>
@@ -75,5 +79,8 @@
                 </tabset>
             </div>
         </div>
+    </div>
+    <div ng-if="!(currentUser || id)">
+        Not logged in
     </div>
 </div>

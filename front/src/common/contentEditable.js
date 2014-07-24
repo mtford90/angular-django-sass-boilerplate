@@ -2,7 +2,6 @@ angular.module('contentEditable', [])
 
     .directive('contentEditableDirective', function ($compile, $log) {
 
-
         return {
             restrict: 'A',
             template: '<div class="editable" style="display:inline">{{value}}</div>',
@@ -12,7 +11,8 @@ angular.module('contentEditable', [])
                 onEndEditing: '=',
                 onChange: '=',
                 value: '=',
-                context: '='
+                context: '=',
+                editable: '='
             },
             link: function (scope, element) {
                 function getEditable() {
@@ -23,17 +23,26 @@ angular.module('contentEditable', [])
                 var pencil = angular.element('<sup><a ng-click="toggleEditing()"><i class="glyphicon glyphicon-pencil" ng-if="!editing"></i></a></sup>');
                 scope.editing = false;
                 element.wrap(wrapper);
-//                element.text(scope.value);
-                element.append(pencil);
-                $compile(pencil.contents())(scope);
+                function addPencil() {
+                    element.append(pencil);
+                    $compile(pencil.contents())(scope);
+                }
 
-                $log.debug('element is:', element);
+                scope.$watch('editable', function (newValue) {
+                    $log.debug('editable changed to', newValue);
+                    if (!newValue) {
+                        pencil.remove();
+                        scope.editing = false;
+                    }
+                    else {
+                        addPencil();
+                    }
+                });
 
                 scope.toggleEditing = function () {
                     var $editable = $(getEditable());
                     $editable.attr('contentEditable', true);
                     scope.editing = true;
-                    $log.debug('click!');
                     $editable.focus();
                 };
 
@@ -53,14 +62,11 @@ angular.module('contentEditable', [])
                 });
 
                 $(getEditable()).blur(function () {
-                    $log.debug('contentEditable with name ' + scope.name + ' has blurred');
                     editingOff();
                 });
 
                 scope.$watch('value', function (newValue, oldValue) {
-                    if (newValue !== oldValue) {
-                        $log.trace('value has changed to', newValue);
-                    }
+
                 });
 
                 var valueAtStart = null;

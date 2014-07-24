@@ -17,12 +17,10 @@ angular.module('app.profile', [
         });
     })
 
-    .controller('ProfileCtrl', function ProfileCtrl($scope, $stateParams, $state, AuthService, $upload,
-                                                    $cookies, errors, $log, dates, Feedback,
-                                                    modalFactory, User) {
+    .controller('ProfileCtrl', function ProfileCtrl($scope, $stateParams, $state, AuthService, $upload, $cookies, errors, $log, dates, Feedback, modalFactory, User, $rootScope) {
         $scope.id = $stateParams.Id;
         if ($scope.id) {
-            User.get({Id:$scope.id}, function success(user) {
+            User.get({Id: $scope.id}, function success(user) {
                 $log.debug('Got user with id ' + $scope.id + ':', user);
                 $scope.user = user;
             }, function failure(res) {
@@ -43,16 +41,7 @@ angular.module('app.profile', [
             currentPage: 1
         };
 
-        $scope.logout = function () {
-            AuthService.logout(function (err) {
-                if (!err) {
-                    $state.go('login');
-                }
-                else {
-                    // TODO: Inject the error somewhere.
-                }
-            });
-        };
+
 
         $scope.onFileSelect = function ($files) {
             var file = $files[0];
@@ -91,22 +80,22 @@ angular.module('app.profile', [
             });
         }
 
-        $scope.$watch('user', function (user, oldValue) {
-            if (user) {
-                getFeedback(1, user);
-            }
-        });
-
+        /**
+         * Fired when paginator page is pressed.
+         */
         $scope.feedbackPageChanged = function () {
             var page = $scope.feedbackPagination.currentPage;
             $log.debug('Getting feedback page:', page);
             getFeedback(page, $scope.user);
         };
 
-        $scope.startEditing = function () {
-            $log.debug('startEditing');
-        };
 
+        /**
+         * Generic function for changing a user field.
+         * @param field
+         * @param newValue
+         * @param callback
+         */
         function changeUserField(field, newValue, callback) {
             var user = $scope.user;
             var oldValue = user[field];
@@ -135,11 +124,35 @@ angular.module('app.profile', [
             }
         }
 
-        function changeUsername(newValue, elem) {
+
+        /**
+         * Returns true if it's the current users profile.
+         * @returns {boolean}
+         */
+        $scope.editable = function () {
+            if ($scope.currentUser) {
+                var currentUserId = $scope.currentUser.id;
+                var profileId = $scope.id;
+                $log.debug(currentUserId, profileId);
+                return currentUserId == profileId;
+            }
+            else {
+                $log.debug('no current user');
+            }
+            return false;
+        };
+
+        /**
+         * Fired off when the username is changed via contentEditable
+         * @param n
+         * @param o
+         * @param elem
+         */
+        $scope.usernameChanged = function (n, o, elem) {
             var oldUsername = $scope.user.username;
 
-            modalFactory.open('Your old username will be made available for others to use.',function () {
-                changeUserField('username', newValue, function finished(err) {
+            modalFactory.open('Your old username will be made available for others to use.', function () {
+                changeUserField('username', n, function finished(err) {
                     if (err) {
                         $log.debug('Error when changing username, so changing it back to ' + oldUsername, elem);
                         $(elem).text(oldUsername);
@@ -150,25 +163,36 @@ angular.module('app.profile', [
                 $(elem).text(oldUsername);
                 // TODO: Change back.
             });
-        }
-
-        function changeEmail(newValue, elem) {
-            var oldEmail = $scope.user.email;
-            modalFactory.open(null ,function () {
-                changeUserField('email', newValue);
-            }, function () {
-                $(elem).text(oldEmail);
-                // TODO: Change back.
-            });
-        }
-
-        $scope.usernameChanged = function (newUsername, oldUsername, elem) {
-            $log.debug('endEditing');
-            changeUsername(newUsername, elem);
         };
 
-        $scope.emailChanged = function (newEmail, oldEmail, elem) {
-            changeEmail(newEmail, elem);
+        /**
+         * Fired off when the email is changed via contentEditable.
+         * @param n
+         * @param o
+         * @param elem
+         */
+        $scope.emailChanged = function (n, o, elem) {
+            var oldEmail = $scope.user.email;
+            modalFactory.open(null, function () {
+                changeUserField('email', n);
+            }, function () {
+                $(elem).text(oldEmail);
+            });
+        };
+
+        /**
+         * Fired off when users name is changed via contentEditable
+         * @param n
+         * @param o
+         * @param elem
+         */
+        $scope.nameChanged = function (n, o, elem) {
+            var oldName = $scope.user.name;
+            modalFactory.open(null, function () {
+                changeUserField('name', n);
+            }, function () {
+                $(elem).text(oldName);
+            });
         };
 
     })

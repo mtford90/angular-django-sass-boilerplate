@@ -429,16 +429,6 @@ module.exports = function (grunt) {
                         to: ''
                     }
                 ]
-            },
-            pen: {
-                src: '<%= build_dir %>/vendor/pen/src/pen.css',
-                dest: '<%= build_dir %>/vendor/pen/src/pen.css',
-                replacements: [
-                    {
-                        from: 'font/',
-                        to: ''
-                    }
-                ]
             }
         },
 

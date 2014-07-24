@@ -80,12 +80,14 @@ module.exports = {
         ],
         css: [
             'vendor/bootstrap/dist/css/*.css*',
-            'vendor/summernote/dist/summernote.css'
+            'vendor/summernote/dist/summernote.css',
+            'vendor/font-awesome/css/font-awesome.css'
         ],
         sass: [
         ],
         assets: [
-            'vendor/bootstrap/dist/fonts/*'
+            'vendor/bootstrap/dist/fonts/*',
+            'vendor/font-awesome/fonts/*',
         ]
     }
 };
