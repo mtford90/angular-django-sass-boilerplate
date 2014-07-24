@@ -41,8 +41,6 @@ angular.module('app.profile', [
             currentPage: 1
         };
 
-
-
         $scope.onFileSelect = function ($files) {
             var file = $files[0];
             $scope.upload = $upload.upload({

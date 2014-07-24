@@ -2,20 +2,28 @@
     <div class="alert-danger" role="alert"></div>
     <div id="current-user-profile" ng-if="currentUser || id">
         <div class="row">
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <div ng-show="!dropSupported" class="alert alert-danger alert-dismissible" role="alert"
                      ng-file-drop-available="dropSupported=true">
                     <button type="button"
                             class="close"
                             data-dismiss="alert">
                         <span aria-hidden="true">&times;</span>
-                <span
-                        class="sr-only">Close</span></button>
+                        <span class="sr-only">Close</span></button>
                     <strong>Error </strong>HTML5 Drag & Drop is not supported in this browser.
                 </div>
-                <div ng-file-drop="onFileSelect($files)">
-                    <img id="profile-photo" ng-src="{{user.profile_photo_url}}">
+                <div class="row">
+                    <div ng-file-drop="onFileSelect($files)" ng-if="editable()">
+                        <img id="profile-photo" ng-src="{{user.profile_photo_url}}">
+                        <input type="file" ng-file-select="onFileSelect($files)" >
+                        <div class="button" ng-file-select="onFileSelect($files)" data-multiple="true"></div>
+                    </div>
+                    <div ng-if="!editable()">
+                        <img id="profile-photo" ng-src="{{user.profile_photo_url}}">
+                    </div>
                 </div>
+
+
                 <h3 content-editable-directive
                     id="name"
                     name="name"
@@ -24,14 +32,15 @@
                     editable="editable()">
                     {{value}}
                 </h3>
-                <h3 content-editable-directive
+                <h4 content-editable-directive
                     id="username"
                     name="username"
                     on-change="usernameChanged"
                     value="user.username"
                     editable="editable()">
                     {{value}}
-                </h3>
+                </h4>
+
                 <div>
             <span content-editable-directive
                   id="email"
@@ -40,7 +49,7 @@
                   editable="editable()"></span>
                 </div>
             </div>
-            <div class="col-md-10">
+            <div class="col-md-9">
                 <tabset>
                     <tab heading="Feedback">
                         <div class="table-responsive" ng-if="feedback.length">

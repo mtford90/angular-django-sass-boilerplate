@@ -8,7 +8,7 @@ class UserSerialiser(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'created_at', 'updated_at', 'profile_photo', 'profile_photo_url', 'email')
+        fields = ('id', 'username', 'created_at', 'updated_at', 'name', 'profile_photo', 'profile_photo_url', 'email')
 
 
 class CommentSerialiser(serializers.ModelSerializer):

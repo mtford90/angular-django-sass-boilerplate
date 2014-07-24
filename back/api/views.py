@@ -47,9 +47,9 @@ class FeedbackAttachmentViewSet(viewsets.ModelViewSet):
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.filter(bug=False).extra(select={
         'num_votes': 'SELECT a-b FROM ((SELECT COUNT(*) AS a '
-                     'FROM server_vote WHERE server_vote.feedback_id = server_feedback.id AND server_vote.up) '
-                     'INNER JOIN (SELECT COUNT(*) AS b FROM server_vote WHERE server_vote.feedback_id = server_feedback.id AND NOT server_vote.up) )',
-        'num_comments': 'SELECT COUNT(*) FROM server_comment WHERE server_comment.feedback_id = server_feedback.id'
+                     'FROM api_vote WHERE api_vote.feedback_id = api_feedback.id AND api_vote.up) '
+                     'INNER JOIN (SELECT COUNT(*) AS b FROM api_vote WHERE api_vote.feedback_id = api_feedback.id AND NOT api_vote.up) )',
+        'num_comments': 'SELECT COUNT(*) FROM api_comment WHERE api_comment.feedback_id = api_feedback.id'
     })
     serializer_class = FeedbackSerialiser
 

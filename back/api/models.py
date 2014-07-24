@@ -28,6 +28,8 @@ class CustomUser(AbstractUser, CommonFields):
                                       null=True)
     about_me = models.TextField(default='', editable=True)
 
+    name = models.CharField(max_length=200, default='', blank=True)
+
     @property
     def profile_photo_url(self):
         try:
@@ -42,6 +44,16 @@ class Feedback(CommonFields):
     description = TextField(default='')
     title = CharField(max_length=300)
     bug = BooleanField(default=False)
+
+    @property
+    def num_comments(self):
+        return self.comments.count()
+
+    @property
+    def num_votes(self):
+        num_up_votes = self.votes.filter(up=True).count()
+        num_down_votes = self.votes.filter(up=False).count()
+        return num_up_votes - num_down_votes
 
 
 class Vote(CommonFields):
