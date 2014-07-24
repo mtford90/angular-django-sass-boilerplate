@@ -29,44 +29,43 @@
     <% }); %>
 </head>
 <body>
-<div class="navbar" id="navbar">
-    <div class="navbar-header">
-        <a href ui-sref="home" class="navbar-brand" id="brand">
-            <img src="assets/logo2.png">
-            jigsaw
-        </a>
 
-    </div>
-    <div class=" pull-right">
-        <ul class="nav navbar-nav">
-            <li ui-sref-active="active">
-                <a href ui-sref="feedback" ng-if="browserSupported">
-                    Give Feedback
-                </a>
-                <a href ng-if="!browserSupported">
-                    Give Feedback
-                </a>
-            </li>
-            <li ui-sref-active="active">
-                <a href ui-sref="login" ng-if="browserSupported">
-                    <div ng-if="currentUser">
-                        Logged in as {{currentUser.username}}
-                    </div>
-                    <div ng-if="!currentUser">
-                        Login
-                    </div>
-                </a>
-                <a href ng-if="!browserSupported">
-                    Login
-                </a>
-            </li>
-        </ul>
-    </div>
-</div>
 
 
 <div class="container">
+    <div class="navbar" id="navbar">
+        <div class="navbar-header">
+            <a href ui-sref="home" class="navbar-brand" id="brand">
+                app
+            </a>
 
+        </div>
+        <div class=" pull-right">
+            <ul class="nav navbar-nav">
+                <li ui-sref-active="active">
+                    <a href ui-sref="feedback" ng-if="browserSupported">
+                        Give Feedback
+                    </a>
+                    <a href ng-if="!browserSupported">
+                        Give Feedback
+                    </a>
+                </li>
+                <li ui-sref-active="active">
+                    <a href ui-sref="login" ng-if="browserSupported">
+                        <div ng-if="currentUser">
+                            Logged in as {{currentUser.username}}
+                        </div>
+                        <div ng-if="!currentUser">
+                            Login
+                        </div>
+                    </a>
+                    <a href ng-if="!browserSupported">
+                        Login
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
 </div>
 
 <div class="container" id="errors">

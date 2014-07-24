@@ -1,74 +1,79 @@
 <div id="profile">
     <div class="alert-danger" role="alert"></div>
-
-
-    <div id="current-user-profile" >
-        <div ng-show="!dropSupported" class="alert alert-danger alert-dismissible" role="alert"
-             ng-file-drop-available="dropSupported=true">
-            <button type="button"
-                    class="close"
-                    data-dismiss="alert">
-                <span aria-hidden="true">&times;</span>
+    <div id="current-user-profile">
+        <div class="row">
+            <div class="col-md-2">
+                <div ng-show="!dropSupported" class="alert alert-danger alert-dismissible" role="alert"
+                     ng-file-drop-available="dropSupported=true">
+                    <button type="button"
+                            class="close"
+                            data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
                 <span
                         class="sr-only">Close</span></button>
-            <strong>Error </strong>HTML5 Drag & Drop is not supported in this browser.
-        </div>
-
-        <h2 content-editable-directive id="username" name="username" on-change="usernameChanged" ng-if="(!id && currentUser) || currentUser.id == id"
-            value="user.username">
-            {{value}}
-        </h2>
-
-        <h2 ng-if="id && currentUser.id != id">
-            {{user.username}}
-        </h2>
-
-        <div ng-file-drop="onFileSelect($files)">
-            <img id="profile-photo" ng-src="{{user.profile_photo_url}}">
-        </div>
-        <div>
-            Email:
-            <span ng-if="(!id && currentUser) || currentUser.id == id" content-editable-directive id="email" name="email" on-change="emailChanged"
-                         value="user.email"></span>
+                    <strong>Error </strong>HTML5 Drag & Drop is not supported in this browser.
+                </div>
+                <div ng-file-drop="onFileSelect($files)">
+                    <img id="profile-photo" ng-src="{{user.profile_photo_url}}">
+                </div>
+                <h2 content-editable-directive id="username" name="username" on-change="usernameChanged"
+                    ng-if="(!id && currentUser) || currentUser.id == id"
+                    value="user.username">
+                    {{value}}
+                </h2>
+                <h2 ng-if="id && currentUser.id != id">
+                    {{user.username}}
+                </h2>
+                <div>
+            <span ng-if="(!id && currentUser) || currentUser.id == id" content-editable-directive id="email"
+                  name="email" on-change="emailChanged"
+                  value="user.email"></span>
             <span ng-if="id && currentUser.id != id">
                 {{user.email}}
             </span>
-        </div>
-        <button ng-click="logout()" ng-if="(!id && currentUser) || currentUser.id == id">
-            Logout
-        </button>
-        <div class="row">
-            <div class="col-md-12">
-                <h2>Feedback</h2>
+                </div>
+                <button ng-click="logout()" ng-if="(!id && currentUser) || currentUser.id == id">
+                    Logout
+                </button>
+            </div>
+            <div class="col-md-10">
+                <tabset>
+                    <tab heading="Feedback">
+                        <div class="table-responsive" ng-if="feedback.length">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Comments</th>
+                                        <th>Votes</th>
+                                    </tr>
+                                    <tr ng-repeat="f in feedback" class="feedback-row">
+                                        <td><a href ui-sref="feedbackDetail({Id:f.id})">{{f.title}}</a></td>
+                                        <td>{{f.num_comments}}</td>
+                                        <td>{{f.num_votes}}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <pagination direction-links="false"
+                                        boundary-links="true"
+                                        total-items="feedbackPagination.count"
+                                        ng-model="feedbackPagination.currentPage"
+                                        num-pages="feedbackPagination.numPages"
+                                        ng-change="feedbackPageChanged()" items-per-page="5"
+                                        ng-if="feedback"></pagination>
+                        </div>
 
-                <div class="table-responsive" ng-if="feedback.length">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <tr>
-                                <th>Title</th>
-                                <th>Comments</th>
-                                <th>Votes</th>
-                            </tr>
-                            <tr ng-repeat="f in feedback" class="feedback-row">
-                                <td><a href ui-sref="feedbackDetail({Id:f.id})">{{f.title}}</a></td>
-                                <td>{{f.num_comments}}</td>
-                                <td>{{f.num_votes}}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-                <pagination direction-links="false"
-                            boundary-links="true"
-                            total-items="feedbackPagination.count"
-                            ng-model="feedbackPagination.currentPage"
-                            num-pages="feedbackPagination.numPages"
-                            ng-change="feedbackPageChanged()" items-per-page="5" ng-if="feedback"></pagination>
-                <div ng-if="!feedback.length">
-                    You haven't given any feedback yet. Please let us know if you have any suggestions or issues by
-                    heading <a href ui-sref="feedback">here</a>
-                </div>
+                        <div ng-if="!feedback.length">
+                            You haven't given any feedback yet. Please let us know if you have any suggestions or issues
+                            by
+                            heading <a href ui-sref="feedback">here</a>
+                        </div>
+                    </tab>
+                    <tab heading="Something Else">
+                        Hello!
+                    </tab>
+                </tabset>
             </div>
         </div>
-
     </div>
 </div>
