@@ -1,0 +1,26 @@
+<div class="snapshot">
+
+    <div>
+        <input type="text" ng-if="editor" ng-model="data.title" placeholder="Enter a subtitle"/>
+        <input type="text" ng-model="data.start" ng-if="editor" ng-blur="changed.startChanged()" ><span ng-if="!editor">{{data.start}}</span> ->
+        <input type="text" ng-model="data.end" ng-if="editor" ng-blur="changed.endChanged()" ><span ng-if="!editor">{{data.end}}</span>
+    </div>
+    <h2 ng-if="!editor">{{data.title}}</h2>
+    <div class="canvas-wrapper col-md-6">
+        <canvas class="snapshot-canvas"></canvas>
+        <div class="buttons">
+            <a href>
+                <i ng-if="isPlaying" class="glyphicon glyphicon-stop" ng-click="playOrStop()"></i>
+                <i ng-if="!isPlaying" class="glyphicon glyphicon-play" ng-click="playOrStop()"></i>
+            </a>
+        </div>
+    </div>
+    <!--<div class="editor" ng-bind-html="data.html" ng-blur="saveHTML($event)"></div>-->
+
+
+    <div class="editor" ng-bind-html="data.html" ng-blur="saveHTML($event)">asdasd</div>
+
+
+
+</div>
+

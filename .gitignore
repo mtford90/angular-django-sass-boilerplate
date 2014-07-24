@@ -1,0 +1,14 @@
+*.sw*
+*~
+build/
+bin/
+node_modules/
+vendor/
+.idea
+.sass-cache
+
+db.sqlite3
+*.pyc
+.DS_store
+
+silk

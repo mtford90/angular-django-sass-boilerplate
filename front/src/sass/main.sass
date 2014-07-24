@@ -1,0 +1,91 @@
+//@import compass/reset
+//@import "bootstrap"
+
+@import "home"
+@import "edit"
+@import "login"
+@import "feedback"
+
+$font-stack: 'Open Sans', sans-serif
+$primary-color: rgb(20, 20, 20)
+
+.navbar
+  .nav
+    font-size: 14px
+    height: 72px
+    li
+      height: inherit
+      display: table
+      a
+        height: inherit
+        display: table-cell
+        vertical-align: middle
+        color: $primary-color
+
+
+html
+  height: 100%
+
+body
+  font: 100% $font-stack
+  font-size: 13px 
+  color: $primary-color
+  height: 100%
+  position: relative
+
+
+#brand
+  color: $primary-color
+  font-weight: 700
+  font-size: 26px
+
+  img
+    width: 30px
+    position: relative
+    top: 5px
+    left: 2px
+
+#jumbotron
+  background: transparent
+
+.vertically-centered-container
+  text-align: center
+  display: table
+  overflow: auto
+  margin: auto
+  position: absolute
+  width: 70%
+  height: 92%
+  opacity: 0.6
+  top: 0
+  left: 0
+  bottom: 0
+  right: 0
+
+  .vertically-centered-inner-container
+    display: table-cell
+    vertical-align: middle
+    text-align: center
+
+  img
+    width: 75px
+
+#not-supported
+
+  img
+    width: 175px
+  font-size: 16px
+
+.error
+  color: darkred
+
+#hidden-video
+  width: 200px
+  //float: right
+  //position: absolute
+  top: 0
+  right: 0
+  //display: none
+
+.hidden
+  display: none

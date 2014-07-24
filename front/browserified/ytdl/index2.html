@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <script type="text/javascript" src="bundle.js"></script>
+</head>
+<body>
+
+<h1>Demo</h1>
+
+<p>
+    example: http://www.youtube.com/watch?v=A02s8omM_hI
+</p>
+
+<p>
+    <input id="url" type="text" style="width:400px">
+    <button onclick="video()">Go!</button>
+</p>
+
+<p>
+
+    <video id="x" width="320" height="240" controls>
+        Your browser does not support the video tag.
+    </video>
+
+</p>
+
+<div id="canvas-div">
+
+
+</div>
+<button onclick="capture();">Go!</button>
+<script>
+
+    var latestVideo;
+
+    function video() {
+        var x = $('#url').val();
+        changeVideo(x);
+    }
+
+    function capture() {
+        var video = $('#x').get(0);
+        latestVideo = video;
+        var w = video.width;
+        var h = video.height;
+        var canvas = $('<canvas></canvas>');
+        $('#canvas-div').append(canvas);
+        canvas = canvas.get(0);
+        canvas.height = h;
+        canvas.width = w;
+        var context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, w, h);
+    }
+
+    function changeVideo(url) {
+        ytdl(url, {}, function (err, video_url) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                var elem = $('<source src="' + video_url + '" type="video/mp4">');
+                $('#x').html(elem);
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        changeVideo('https://www.youtube.com/watch?v=a4vx0Cy5Hi4');
+    });
+
+
+</script>
+</body>
+</html>

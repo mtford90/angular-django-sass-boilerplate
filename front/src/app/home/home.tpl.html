@@ -1,0 +1,39 @@
+<div class="jumbotron" id="jumbotron">
+    <h1>Turn Videos into Interactive Notes</h1>
+
+    <p class="lead">
+        Break videos down into chunks. Use markdown and rich text
+        to annotate those chunks and then publish as interactive HTML pages,
+        either for personal use or for the world to see.
+    </p>
+
+    <div class="text-center">
+        <a href ui-sref="breakdown" class="btn btn-large btn-success" id="get-started">
+            Get Started
+        </a>
+    </div>
+</div>
+
+
+<h3 class="row" id="most-recent">Most Recent</h3>
+<div class="row">
+    <div ng-if="!chunkedBreakdowns">
+        Loading...
+    </div>
+    <div ng-if="chunkedBreakdowns">
+        <div ng-repeat="row in chunkedBreakdowns" class="breakdowns">
+            <div class="row">
+                <div ng-repeat="b in row">
+                    <div class="breakdown col-md-4">
+                        <a href="/#/breakdown/{{b.id}}">
+                            <div><img ng-src="{{b.thumbnail}}"></div>
+                            <h4 class="title">{{b.title}}</h4>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <a href ui-sref="browse">Browse Jigsaws</a>
+    </div>
+</div>
+

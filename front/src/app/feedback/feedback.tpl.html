@@ -1,0 +1,45 @@
+<div id="feedback-list">
+    <p>
+        Jigsaw is in it's infant stages and I'd much appreciate feedback. Please use the below to report bugs, request
+        features and comment on current features. Any additional features and improvements will be entirely driven
+        by this.
+    </p>
+
+
+    <div>
+        <a href ui-sref="addFeedback" class="glyphicon glyphicon-plus" id="get-started"></a>
+    </div>
+    <div id="feedback">
+        <div ng-if="feedback">
+            <div class="table-responsive">
+                <table class="table">
+                    <tr>
+                        <th>Title</th>
+                        <th>User</th>
+                        <th>Comments</th>
+                        <th>Votes</th>
+                    </tr>
+                    <tr ng-repeat="f in feedback" class="feedback-row" >
+                        <td><a href ui-sref="feedbackDetail({Id:f.id})">{{f.title}}</a></td>
+                        <td><a href ui-sref="profile({Id:f.user.id})"><img ng-src="{{f.user.profile_photo_url}}" class="profile-photo">{{f.user.username}}</a></td>
+                        <td>{{f.num_comments}}</td>
+                        <td>{{f.num_votes}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div ng-if="!no-feedback">
+            No feedback yet
+        </div>
+    </div>
+
+    <pagination direction-links="false"
+                boundary-links="true"
+                total-items="count"
+                ng-model="currentPage"
+                num-pages="numPages"
+                items-per-page="10"
+                ng-change="pageChanged()"></pagination>
+
+
+</div>

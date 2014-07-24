@@ -1,0 +1,24 @@
+<div id="login-or-profile" ng-if="!currentUser">
+    <div id="login">
+        <div id="inner-login">
+            <div id="login-form">
+                <input id="username" name="username" placeholder="Your username" type="text" ng-model="details.username"/>
+                <input id="password" name="password" placeholder="Your password" type="password" ng-model="details.password"/>
+                <button ng-click="login()">
+                    Login
+                </button>
+            </div>
+            <div class="error">
+                {{error}}
+            </div>
+            <div id="sign-up-links">
+                Don't have an account? <a href ui-sref="signup">
+                Sign Up
+            </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
