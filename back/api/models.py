@@ -45,15 +45,7 @@ class Feedback(CommonFields):
     title = CharField(max_length=300)
     bug = BooleanField(default=False)
 
-    @property
-    def num_comments(self):
-        return self.comments.count()
 
-    @property
-    def num_votes(self):
-        num_up_votes = self.votes.filter(up=True).count()
-        num_down_votes = self.votes.filter(up=False).count()
-        return num_up_votes - num_down_votes
 
 
 class Vote(CommonFields):

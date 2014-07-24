@@ -14,12 +14,12 @@
                 </div>
                 <div class="row">
                     <div ng-file-drop="onFileSelect($files)" ng-if="editable()">
-                        <img id="profile-photo" ng-src="{{user.profile_photo_url}}">
+                        <img class="profile-photo" ng-src="{{user.profile_photo_url}}">
                         <input type="file" ng-file-select="onFileSelect($files)" >
                         <div class="button" ng-file-select="onFileSelect($files)" data-multiple="true"></div>
                     </div>
                     <div ng-if="!editable()">
-                        <img id="profile-photo" ng-src="{{user.profile_photo_url}}">
+                        <img class="profile-photo" ng-src="{{user.profile_photo_url}}">
                     </div>
                 </div>
 
@@ -40,7 +40,6 @@
                     editable="editable()">
                     {{value}}
                 </h4>
-
                 <div>
             <span content-editable-directive
                   id="email"

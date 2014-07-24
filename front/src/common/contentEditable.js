@@ -29,7 +29,6 @@ angular.module('contentEditable', [])
                 }
 
                 scope.$watch('editable', function (newValue) {
-                    $log.debug('editable changed to', newValue);
                     if (!newValue) {
                         pencil.remove();
                         scope.editing = false;

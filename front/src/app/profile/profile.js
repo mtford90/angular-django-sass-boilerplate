@@ -78,6 +78,13 @@ angular.module('app.profile', [
             });
         }
 
+        $scope.$watch('user', function (newValue) {
+            var user = $scope.user;
+            if (user) {
+                getFeedback(1, user);
+            }
+        });
+
         /**
          * Fired when paginator page is pressed.
          */
