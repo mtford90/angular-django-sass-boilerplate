@@ -56,7 +56,8 @@ angular.module('app', [
         })();
 
         var supportedBrowsers = {
-            Firefox: 30
+            Firefox: 30,
+            Chrome: 36
         };
 
         if (typeof(sayswho) == 'string') {

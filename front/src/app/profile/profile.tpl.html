@@ -39,40 +39,6 @@
         </button>
         <div class="row">
             <div class="col-md-12">
-                <h2>
-                    Jigsaws
-                </h2>
-
-                <div class="table-responsive" ng-if="breakdowns.length">
-                    <table class="table">
-                        <tr>
-                            <th>When</th>
-                            <th>Title</th>
-                            <th>Video</th>
-                        </tr>
-                        <tr ng-repeat="b in breakdowns" class="breakdown-row">
-                            <td>{{b.dateStr}}</td>
-                            <td><a href ui-sref="breakdown({breakdownId:b.id})">{{b.title}}</a></td>
-                            <td><a ng-href="{{b.url}}">{{b.url}}</a></td>
-                        </tr>
-                    </table>
-                </div>
-                <pagination direction-links="false"
-                            boundary-links="true"
-                            total-items="breakdownPagination.count"
-                            ng-model="breakdownPagination.currentPage"
-                            num-pages="breakdownPagination.numPages"
-                            ng-change="jigsawPageChanged()" items-per-page="5" ng-if="breakdowns"></pagination>
-            </div>
-            <div ng-if="!breakdowns.length">
-                <div class="col-md-12">
-                    No jigsaws yet
-                </div>
-            </div>
-
-        </div>
-        <div class="row">
-            <div class="col-md-12">
                 <h2>Feedback</h2>
 
                 <div class="table-responsive" ng-if="feedback.length">

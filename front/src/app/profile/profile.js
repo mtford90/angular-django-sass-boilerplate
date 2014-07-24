@@ -18,7 +18,7 @@ angular.module('app.profile', [
     })
 
     .controller('ProfileCtrl', function ProfileCtrl($scope, $stateParams, $state, AuthService, $upload,
-                                                    $cookies, errors, $log, Breakdown, dates, Feedback,
+                                                    $cookies, errors, $log, dates, Feedback,
                                                     modalFactory, User) {
         $scope.id = $stateParams.Id;
         if ($scope.id) {
@@ -85,29 +85,6 @@ angular.module('app.profile', [
 
         var pageSize = 5;
 
-        function getBreakdowns(user, page) {
-            var opts = {
-                user: user.id,
-                page: page,
-                page_size: pageSize,
-                ordering: '-created_at'
-            };
-            Breakdown.list(opts, function success(breakdowns) {
-                var results = breakdowns.results;
-                $scope.breakdownPagination.count = breakdowns.count;
-//                $scope.breakdownPagination.numPages = Math.ceil(breakdowns.count / pageSize);
-                $log.debug('Got users breakdowns:', breakdowns);
-                for (var idx in results) {
-                    var breakdown = results[idx];
-                    breakdown.dateStr = dates.shortDate(new Date(Date.parse(breakdown.created_at)));
-                }
-                $scope.breakdowns = results;
-                $log.debug('Breakdowns pagination:', $scope.breakdownPagination, $scope.breakdowns);
-            }, function fail(res) {
-                errors.serverErrorFromResult(res);
-            });
-        }
-
         function getFeedback(page, user) {
             Feedback.list({page: page, page_size: 5, user: user.id}, function (x) {
                 $scope.feedback = x.results;
@@ -121,16 +98,9 @@ angular.module('app.profile', [
 
         $scope.$watch('user', function (user, oldValue) {
             if (user) {
-                getBreakdowns(user, 1);
                 getFeedback(1, user);
             }
         });
-
-        $scope.jigsawPageChanged = function () {
-            var page = $scope.breakdownPagination.currentPage;
-            $log.debug('Getting jigsaws page:', page);
-            getBreakdowns($scope.user, page);
-        };
 
         $scope.feedbackPageChanged = function () {
             var page = $scope.feedbackPagination.currentPage;
