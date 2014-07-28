@@ -28,7 +28,7 @@ if STAGE == 'prod':
 else:
     DEBUG = True
     TEMPLATE_DEBUG = True
-    # DEBUG_PROPAGATE_EXCEPTIONS = True
+    DEBUG_PROPAGATE_EXCEPTIONS = True
 
 ALLOWED_HOSTS = ['*']
 
