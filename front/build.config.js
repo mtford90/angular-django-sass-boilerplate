@@ -81,7 +81,8 @@ module.exports = {
         css: [
             'vendor/bootstrap/dist/css/*.css*',
             'vendor/summernote/dist/summernote.css',
-            'vendor/font-awesome/css/font-awesome.css'
+            'vendor/font-awesome/css/font-awesome.css',
+            'src/css/*.css'
         ],
         sass: [
         ],
