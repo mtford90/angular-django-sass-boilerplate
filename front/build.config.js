@@ -76,7 +76,8 @@ module.exports = {
             'vendor/summernote/dist/summernote.js',
             'vendor/bootstrap/dist/js/bootstrap.js',
             'vendor/angular-summernote/src/angular-summernote.js',
-            'vendor/modernizr/modernizr.js'
+            'vendor/modernizr/modernizr.js',
+            'vendor/angular-base64/angular-base64.js'
         ],
         css: [
             'vendor/bootstrap/dist/css/*.css*',

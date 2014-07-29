@@ -1,0 +1,45 @@
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <label for="api-key">Asana API Key:</label><input id="api-key"
+                                                              placeholder="Your API Key"
+                                                              ng-model="currApiKey"
+                                                              ng-blur="apiKeyChanged()"/>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Active Tasks</h1>
+
+            <p>
+                These are tasks that can be selected during the execution of Pomodoros.
+            </p>
+            <table class="table-responsive">
+                <tr>
+                    <th>Workspace</th>
+                    <th>Project</th>
+                    <th>Title</th>
+                    <th>Tags</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+
+            <h1>Inactive Tasks</h1>
+
+            <p>
+                This your Asana task pool. Click the plus button to
+            </p>
+            <table class="table-responsive">
+                <tr>
+                    <th>Workspace</th>
+                    <th>Project</th>
+                    <th>Title</th>
+                    <th>Tags</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>

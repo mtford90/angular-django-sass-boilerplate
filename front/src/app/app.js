@@ -2,6 +2,8 @@ angular.module('app', [
     'templates-app',
     'templates-common',
     'app.home',
+    'app.settings',
+    'app.stats',
     'app.logging',
     'ui.router',
     'ui.bootstrap',
@@ -13,12 +15,15 @@ angular.module('app', [
         $urlRouterProvider.otherwise('/home');
     })
 
-    .run(function run($http, $cookies) {
-        $http.defaults.headers.post['X-CSRFToken'] = $cookies['csrftoken'];
-    })
+    .controller('AppCtrl', function ($scope, $cookies) {
 
-    .controller('AppCtrl', function ($scope) {
+        $scope.settings = {
+            apiKey: $cookies.apiKey
+        };
 
+        $scope.$watch('currApiKey', function (newValue) {
+            $cookies.apiKey = newValue;
+        });
 
     });
 
