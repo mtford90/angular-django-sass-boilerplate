@@ -1,6 +1,6 @@
 <div id="settings" class="container">
     <div class="row">
-        <div class="col-md-12" id="help" >
+        <div class="col-md-12" id="help">
             {{helpText}}
         </div>
     </div>
@@ -67,7 +67,8 @@
                     <span class="title">{{task.title}}</span>
                     <span ng-if="task.project" class="tag">{{task.project}}</span>
                     <span ng-repeat="tag in task.tags" class="tag">{{tag}}</span>
-                    <span ng-if="task.source == SOURCES.Asana"><img src="assets/asana-icon.png" class="source asana-source"></span>
+                    <span ng-if="task.source == SOURCES.Asana"><img src="assets/asana-icon.png"
+                                                                    class="source asana-source"></span>
                     <span ng-if="task.source == SOURCES.Trello"><img src="assets/trello-icon.png" class="source"></span>
                 </div>
             </div>
@@ -82,6 +83,7 @@
                 <span ng-if="settings.asanaHidden">[+]</span>
                 <span ng-if="!settings.asanaHidden">[-]</span>
             </a>
+
             <div ng-if="!settings.asanaHidden">
                 <div class="setting">
                     <div class="settings-label">
@@ -90,6 +92,7 @@
                     <div class="settings-value">
                         <input id="asana-api-key" ng-model="settings.asanaApiKey" ng-blur="asanaApiBlurred()">
                     </div>
+                    <dropdown items="asana.workspaces"></dropdown>
                 </div>
             </div>
         </div>

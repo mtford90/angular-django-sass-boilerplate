@@ -1,6 +1,7 @@
 angular.module('app.settings', [
     'app.asana',
-    'LocalStorageModule'
+    'LocalStorageModule',
+    'dropdown'
 ])
 
     .config(function config($stateProvider) {
@@ -93,9 +94,13 @@ angular.module('app.settings', [
         Asana: 'asana'
     })
 
-    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, User, SettingsService, SOURCES, SETTING_CHANGED_EVENT, SETTING_CHANGED_PROPERTY_KEY, SETTING_CHANGED_NEW_VALUE_KEY) {
+    .constant('ASANA_API_KEY', 'asanaApiKey')
 
-        var ASANA_API_KEY = 'asanaApiKey';
+    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, User, SettingsService, SOURCES,
+                                                      SETTING_CHANGED_EVENT,
+                                                      SETTING_CHANGED_PROPERTY_KEY,
+                                                      SETTING_CHANGED_NEW_VALUE_KEY,
+                                                      ASANA_API_KEY) {
 
         $scope.SOURCES = SOURCES; // So that we can access these from the templates.
 
@@ -198,13 +203,34 @@ angular.module('app.settings', [
             }
         }
 
+        $scope.asana = {
+            workspaces: [],
+            projects: []
+        };
+
         $scope.$on(SETTING_CHANGED_EVENT, function (event, data) {
             var property = data[SETTING_CHANGED_PROPERTY_KEY];
             if (property == ASANA_API_KEY) {
-                $log.debug('asana api key changed!');
+                var user = User.get(function success() {
+                    $log.info('Successfully got user:', user);
+                    var data = user.data;
+                    if (data) {
+                        var workspaces = data.workspaces;
+                        if (workspaces) {
+                            $scope.asana.workspaces = workspaces;
+                        }
+                        else {
+                            // TODO: Error communicating with Asana.
+                        }
+                    }
+                    else {
+                        // TODO: Error communicating with Asana.
+                    }
+
+                }, function fail(err) {
+                    $log.error('Error getting user:', err);
+                });
             }
         });
-
     })
-
 ;
