@@ -1,40 +1,52 @@
 <div id="settings" class="container">
     <div class="row">
+        <div class="col-md-12" id="help" >
+            {{helpText}}
+        </div>
+    </div>
+    <div class="row">
         <div class="col-md-12">
+            <!--<h1 ng-mouseover="hover('Some help!')" ng-mouseleave="clearHelpText()">-->
             <h1>
                 Pomodoro
             </h1>
+            <a href ng-click="togglePomodoro()" class="toggle">
+                <span ng-if="settings.pomodoroHidden">[+]</span>
+                <span ng-if="!settings.pomodoroHidden">[-]</span>
+            </a>
 
-            <div class="setting">
-                <div class="settings-label">
-                    <label for="rounds">Rounds</label>
+            <div ng-if="!settings.pomodoroHidden">
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="rounds">Rounds</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="rounds" ng-model="settings.pomodoroRounds">
+                    </div>
                 </div>
-                <div class="settings-value">
-                    <input id="rounds" ng-model="settings.pomodoroRounds">
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="goal">Goal</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="goal" ng-model="settings.pomodoroGoal">
+                    </div>
                 </div>
-            </div>
-            <div class="setting">
-                <div class="settings-label">
-                    <label for="goal">Goal</label>
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="short-break">Short Break</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="short-break" ng-model="settings.pomodoroShortBreak">
+                    </div>
                 </div>
-                <div class="settings-value">
-                    <input id="goal" ng-model="settings.pomodoroGoal">
-                </div>
-            </div>
-            <div class="setting">
-                <div class="settings-label">
-                    <label for="short-break">Short Break</label>
-                </div>
-                <div class="settings-value">
-                    <input id="short-break" ng-model="settings.pomodoroShortBreak">
-                </div>
-            </div>
-            <div class="setting">
-                <div class="settings-label">
-                    <label for="long-break">Long Break</label>
-                </div>
-                <div class="settings-value">
-                    <input id="long-break" ng-model="settings.pomodoroLongBreak">
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="long-break">Long Break</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="long-break" ng-model="settings.pomodoroLongBreak">
+                    </div>
                 </div>
             </div>
         </div>
@@ -44,11 +56,19 @@
             <h1>
                 Tasks
             </h1>
-            <div class="row" ng-repeat="task in tasks.active">
+            <a href ng-click="toggleTasks()" class="toggle">
+                <span ng-if="settings.tasksHidden">[+]</span>
+                <span ng-if="!settings.tasksHidden">[-]</span>
+            </a>
+
+            <div class="row task" ng-repeat="task in tasks.active" ng-if="!settings.tasksHidden">
                 <div class="col-md-12">
-                    {{$index}} {{task.title}}
-                    <span ng-if="task.project">{{task.project}}</span>
-                    <span ng-repeat="tag in task.tags">{{tag}}</span>
+                    <span class="index">{{$index+1}}</span>
+                    <span class="title">{{task.title}}</span>
+                    <span ng-if="task.project" class="tag">{{task.project}}</span>
+                    <span ng-repeat="tag in task.tags" class="tag">{{tag}}</span>
+                    <span ng-if="task.source == SOURCES.Asana"><img src="assets/asana-icon.png" class="source asana-source"></span>
+                    <span ng-if="task.source == SOURCES.Trello"><img src="assets/trello-icon.png" class="source"></span>
                 </div>
             </div>
         </div>
@@ -58,13 +78,18 @@
             <h1>
                 Asana
             </h1>
-
-            <div class="setting">
-                <div class="settings-label">
-                    <label for="asana-api-key">API key</label>
-                </div>
-                <div class="settings-value">
-                    <input id="asana-api-key" ng-model="settings.asanaApiKey">
+            <a href ng-click="toggleAsana()" class="toggle">
+                <span ng-if="settings.asanaHidden">[+]</span>
+                <span ng-if="!settings.asanaHidden">[-]</span>
+            </a>
+            <div ng-if="!settings.asanaHidden">
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="asana-api-key">API key</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="asana-api-key" ng-model="settings.asanaApiKey">
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,13 +99,19 @@
             <h1>
                 Trello
             </h1>
+            <a href ng-click="toggleTrello()" class="toggle">
+                <span ng-if="settings.trelloHidden">[+]</span>
+                <span ng-if="!settings.trelloHidden">[-]</span>
+            </a>
 
-            <div class="setting">
-                <div class="settings-label">
-                    <label for="trello-api-key">API key</label>
-                </div>
-                <div class="settings-value">
-                    <input id="trello-api-key" ng-model="settings.trelloApiKey">
+            <div ng-if="!settings.trelloHidden">
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="trello-api-key">API key</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="trello-api-key" ng-model="settings.trelloApiKey">
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,3 +1,6 @@
+@import "colors"
+@import "compass/css3/border-radius"
+
 #settings
   h1
     font-size: 28px
@@ -13,6 +16,8 @@
 
   .setting
 
+    position: relative
+
     .settings-label
       min-width: 90px
 
@@ -27,3 +32,32 @@
     div
       display: inline-block
       padding: 5px
+
+  .task
+    margin-top: 10px
+    .index
+      font-weight: 700
+      font-size: 15px
+      margin-right: 5px
+    .title
+      margin-right: 5px
+    .tag
+      background-color: $primary-color
+      color: $background-color
+      padding-top: 3px
+      padding-bottom: 2px
+      padding-left: 8px
+      padding-right: 8px
+      font-size: 11px
+      +border-radius(5px, 5px)
+    .source
+      height: 15px
+      margin-left: 3px
+    .asana-source
+      position: relative
+      bottom: 1px
+
+.toggle
+  position: absolute
+  left: -14px
+  top: 28px
