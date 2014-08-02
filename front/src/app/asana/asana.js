@@ -94,8 +94,7 @@ angular.module('app.asana', ['ngResource', 'base64'])
                 return response;
             },
             responseError: function (rejection) {
-//                $log.error('response error intercept', rejection);
-//                logResponse(rejection);
+                logResponse(rejection);
                 return $q.reject(rejection);
             },
             request: function (config) {
@@ -135,7 +134,7 @@ angular.module('app.asana', ['ngResource', 'base64'])
     })
 
     .config(function ($httpProvider) {
-//        $httpProvider.interceptors.push('LogHTTPInterceptor');
+        $httpProvider.interceptors.push('LogHTTPInterceptor');
         $httpProvider.interceptors.push('APIKeyInterceptor');
     })
 

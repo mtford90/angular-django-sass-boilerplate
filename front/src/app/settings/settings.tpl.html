@@ -88,7 +88,7 @@
                         <label for="asana-api-key">API key</label>
                     </div>
                     <div class="settings-value">
-                        <input id="asana-api-key" ng-model="settings.asanaApiKey">
+                        <input id="asana-api-key" ng-model="settings.asanaApiKey" ng-blur="asanaApiBlurred()">
                     </div>
                 </div>
             </div>
@@ -110,7 +110,7 @@
                         <label for="trello-api-key">API key</label>
                     </div>
                     <div class="settings-value">
-                        <input id="trello-api-key" ng-model="settings.trelloApiKey">
+                        <input id="trello-api-key" ng-model="settings.trelloApiKey" ng-blur="trelloApiBlurred()">
                     </div>
                 </div>
             </div>
