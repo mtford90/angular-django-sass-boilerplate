@@ -1,9 +1,10 @@
 //@import compass/reset
 @import "home"
+@import "settings"
 
-$font-stack: 'Open Sans', sans-serif
+$paragraph-font: 'Museo Slab', sans-serif
+$number-font: 'Lato', sans-serif
 $primary-color: rgb(17, 33, 36)
-
 $background-color: rgb(242, 242, 255)
 
 .navbar
@@ -20,11 +21,18 @@ $background-color: rgb(242, 242, 255)
         color: $primary-color
 
 
+.numeric
+  font-family: $number-font
+
+.generic
+  font-family: $paragraph-font
+
+
 html
   height: 100%
 
 body
-  font: 100% $font-stack
+  font: 100% $paragraph-font
   font-size: 13px 
   color: $primary-color
   height: 100%
@@ -61,12 +69,12 @@ body
   margin-top: 20px
   margin-bottom: 20px
   .menu-item
-    width: 68px
-    margin: 20px
-  #logo
-    width: 131px
-  #graphs-menu-item
+    width: 45px
+    margin: 25px
     position: relative
-    bottom: 3px
+    top: 10px
+  #logo
+    width: 90px
+
 
 

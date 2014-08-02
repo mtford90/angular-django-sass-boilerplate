@@ -15,15 +15,6 @@ angular.module('app', [
         $urlRouterProvider.otherwise('/home');
     })
 
-    .controller('AppCtrl', function ($scope, $cookies) {
-
-        $scope.settings = {
-            apiKey: $cookies.apiKey
-        };
-
-        $scope.$watch('currApiKey', function (newValue) {
-            $cookies.apiKey = newValue;
-        });
-
+    .controller('AppCtrl', function ($scope, $log) {
     });
 

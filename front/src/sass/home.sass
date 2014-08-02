@@ -1,6 +1,11 @@
+
+
 #timer
   #clock
     font-size: 120px
+    @extend .numeric
+
+
   #current-task
     font-size: 20px
 
@@ -14,18 +19,19 @@
     display: inline
 
 .stat
-  display: inline-block
-  margin: 15px
-  text-align: center
   .stats-text
     font-size: 30px
-  .stats-figure
+  .divisor
+    @extend .numeric
+  .dividend
     font-size: 40px
+    font-weight: 700
+    @extend .numeric
 
 
 #buttons
   margin-top: 20px
   .button
     margin-left: 15px
-  #play-img
     width: 50px
+

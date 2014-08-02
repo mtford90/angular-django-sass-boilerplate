@@ -44,8 +44,8 @@ angular.module('app.asana', ['ngResource', 'base64'])
         };
 
         function logResponse(response) {
-            var config = response.config;
             var data = response.data;
+            var config = response.config;
             var url = config.url;
             if (config.params) {
                 url += serialize(config.params);
@@ -63,6 +63,7 @@ angular.module('app.asana', ['ngResource', 'base64'])
             else {
                 $log.debug(prelude);
             }
+
 
         }
 
@@ -94,7 +95,7 @@ angular.module('app.asana', ['ngResource', 'base64'])
             },
             responseError: function (rejection) {
 //                $log.error('response error intercept', rejection);
-                logResponse(rejection);
+//                logResponse(rejection);
                 return $q.reject(rejection);
             },
             request: function (config) {
@@ -113,24 +114,28 @@ angular.module('app.asana', ['ngResource', 'base64'])
  * Use basic auth with asana API key.
  * See http://developer.asana.com/documentation/#api_keys for information on this
  */
-    .factory('APIKeyInterceptor', function ($rootScope, $base64, $log) {
+    .factory('APIKeyInterceptor', function ($rootScope, $base64, $log, $q) {
         return {
             request: function (config) {
-                var apiKey = $rootScope.settings.currApiKey;
-                var a = apiKey + ':';
-                $log.debug('encoding:', a);
-                var s = 'Basic ' +
-                    $base64.encode(a);
-                $log.debug('basic header: ', s);
-                config.headers['Authorization'] = s;
-                return config;
+                var apiKey = 'abc';
+                if (apiKey) {
+                    var a = apiKey + ':';
+                    $log.debug('unencoded:', a);
+                    var s = 'Basic ' +
+                        $base64.encode(a);
+                    $log.debug('encoded:', s);
+                    config.headers['Authorization'] = s;
+                    return config;
+                }
+                else {
+                    return $q.reject('Cannot send an asana request without api key present');
+                }
             }
         };
-
     })
 
     .config(function ($httpProvider) {
-        $httpProvider.interceptors.push('LogHTTPInterceptor');
+//        $httpProvider.interceptors.push('LogHTTPInterceptor');
         $httpProvider.interceptors.push('APIKeyInterceptor');
     })
 

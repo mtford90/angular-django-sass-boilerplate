@@ -1,45 +1,88 @@
-<div class="container">
+<div id="settings" class="container">
     <div class="row">
         <div class="col-md-12">
-            <label for="api-key">Asana API Key:</label><input id="api-key"
-                                                              placeholder="Your API Key"
-                                                              ng-model="currApiKey"
-                                                              ng-blur="apiKeyChanged()"/>
+            <h1>
+                Pomodoro
+            </h1>
+
+            <div class="setting">
+                <div class="settings-label">
+                    <label for="rounds">Rounds</label>
+                </div>
+                <div class="settings-value">
+                    <input id="rounds" ng-model="settings.pomodoroRounds">
+                </div>
+            </div>
+            <div class="setting">
+                <div class="settings-label">
+                    <label for="goal">Goal</label>
+                </div>
+                <div class="settings-value">
+                    <input id="goal" ng-model="settings.pomodoroGoal">
+                </div>
+            </div>
+            <div class="setting">
+                <div class="settings-label">
+                    <label for="short-break">Short Break</label>
+                </div>
+                <div class="settings-value">
+                    <input id="short-break" ng-model="settings.pomodoroShortBreak">
+                </div>
+            </div>
+            <div class="setting">
+                <div class="settings-label">
+                    <label for="long-break">Long Break</label>
+                </div>
+                <div class="settings-value">
+                    <input id="long-break" ng-model="settings.pomodoroLongBreak">
+                </div>
+            </div>
         </div>
     </div>
     <div class="row">
         <div class="col-md-12">
-            <h1>Active Tasks</h1>
-
-            <p>
-                These are tasks that can be selected during the execution of Pomodoros.
-            </p>
-            <table class="table-responsive">
-                <tr>
-                    <th>Workspace</th>
-                    <th>Project</th>
-                    <th>Title</th>
-                    <th>Tags</th>
-                </tr>
-            </table>
+            <h1>
+                Tasks
+            </h1>
+            <div class="row" ng-repeat="task in tasks.active">
+                <div class="col-md-12">
+                    {{$index}} {{task.title}}
+                    <span ng-if="task.project">{{task.project}}</span>
+                    <span ng-repeat="tag in task.tags">{{tag}}</span>
+                </div>
+            </div>
         </div>
     </div>
     <div class="row">
         <div class="col-md-12">
+            <h1>
+                Asana
+            </h1>
 
-            <h1>Inactive Tasks</h1>
+            <div class="setting">
+                <div class="settings-label">
+                    <label for="asana-api-key">API key</label>
+                </div>
+                <div class="settings-value">
+                    <input id="asana-api-key" ng-model="settings.asanaApiKey">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h1>
+                Trello
+            </h1>
 
-            <p>
-                This your Asana task pool. Click the plus button to
-            </p>
-            <table class="table-responsive">
-                <tr>
-                    <th>Workspace</th>
-                    <th>Project</th>
-                    <th>Title</th>
-                    <th>Tags</th>
-                </tr>
-            </table>
+            <div class="setting">
+                <div class="settings-label">
+                    <label for="trello-api-key">API key</label>
+                </div>
+                <div class="settings-value">
+                    <input id="trello-api-key" ng-model="settings.trelloApiKey">
+                </div>
+            </div>
         </div>
     </div>
 </div>

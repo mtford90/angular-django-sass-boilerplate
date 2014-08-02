@@ -65,7 +65,6 @@ module.exports = {
         js: [
             'vendor/jquery/dist/jquery.js',
             'vendor/underscore/underscore.js',
-            'vendor/ng-file-upload/angular-file-upload-html5-shim.js',
             'vendor/angular/angular.js',
             'vendor/ng-file-upload/angular-file-upload.js',
             'vendor/angular-bootstrap/ui-bootstrap-tpls.min.js',
@@ -73,23 +72,19 @@ module.exports = {
             'vendor/angular-cookies/angular-cookies.js',
             'vendor/angular-resource/angular-resource.js',
             'vendor/angular-ui-utils/modules/route/route.js',
-            'vendor/summernote/dist/summernote.js',
             'vendor/bootstrap/dist/js/bootstrap.js',
-            'vendor/angular-summernote/src/angular-summernote.js',
             'vendor/modernizr/modernizr.js',
+            'vendor/angular-local-storage/angular-local-storage.js',
             'vendor/angular-base64/angular-base64.js'
         ],
         css: [
             'vendor/bootstrap/dist/css/*.css*',
-            'vendor/summernote/dist/summernote.css',
-            'vendor/font-awesome/css/font-awesome.css',
             'src/css/*.css'
         ],
         sass: [
         ],
         assets: [
-            'vendor/bootstrap/dist/fonts/*',
-            'vendor/font-awesome/fonts/*',
+            'vendor/bootstrap/dist/fonts/*'
         ]
     }
 };
