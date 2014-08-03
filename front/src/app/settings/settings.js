@@ -1,7 +1,8 @@
 angular.module('app.settings', [
     'app.asana',
     'LocalStorageModule',
-    'dropdown'
+    'dropdown',
+    'ngDragDrop'
 ])
 
     .config(function config($stateProvider) {
@@ -96,11 +97,7 @@ angular.module('app.settings', [
 
     .constant('ASANA_API_KEY', 'asanaApiKey')
 
-    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, Users, SettingsService, SOURCES,
-                                                      SETTING_CHANGED_EVENT,
-                                                      SETTING_CHANGED_PROPERTY_KEY,
-                                                      SETTING_CHANGED_NEW_VALUE_KEY,
-                                                      ASANA_API_KEY) {
+    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, Users, Workspaces, Projects, Tasks, SettingsService, SOURCES, SETTING_CHANGED_EVENT, SETTING_CHANGED_PROPERTY_KEY, SETTING_CHANGED_NEW_VALUE_KEY, ASANA_API_KEY, ASANA_ERRORS) {
 
         $scope.SOURCES = SOURCES; // So that we can access these from the templates.
 
@@ -202,36 +199,121 @@ angular.module('app.settings', [
                 }
             }
         }
+        function resetAsana() {
+            $scope.asana = {
+                workspaces: [],
+                tasks: [],
+                error: null,
+                user: null,
+                isLoading: false,
+                selectedWorkspace: null,
+                isLoadingTasks: false
+            };
+        }
 
-        $scope.asana = {
-            workspaces: [],
-            projects: [],
-            error: null
+        resetAsana();
+
+        var configureAsana = function () {
+            resetAsana();
+            $scope.asana.isLoading = true;
+            Users.one('me').get().then(function success(user) {
+                $scope.asana.isLoading = false;
+                $log.info('Successfully got user:', user);
+                var data = user;
+                if (data) {
+                    $scope.asana.user = data;
+                    var workspaces = data.workspaces;
+                    if (workspaces) {
+                        $scope.asana.workspaces = workspaces;
+                        if (workspaces.length) {
+                            $scope.asana.selectedWorkspace = workspaces[0];
+                        }
+                    }
+                    else {
+                        $scope.asana.error = 'No workspaces returned from Asana';
+                    }
+                }
+                else {
+                    $scope.asana.error = 'No user data returned from Asana.';
+                }
+            }, function fail(err) {
+                $scope.asana.isLoading = false;
+                if (err.reason && err.code) {
+                    if (err.code == ASANA_ERRORS.NO_API_KEY) {
+                        // Do nothing
+                    }
+                    else {
+                        $scope.asana.error = err.reason;
+                    }
+                }
+                else if (err.status == 401) {
+                    $scope.asana.error = 'Invalid API Key';
+                }
+                else if ('errors' in err.data) {
+                    if (err.data.errors.length) {
+                        $scope.asana.error = err.data.errors[0];
+                    }
+                    else {
+                        $scope.asana.error = 'Unknown Error';
+                    }
+                }
+                else {
+                    $scope.asana.error = 'Unknown Error: HTTP ' + err.status;
+                }
+                $log.error('Error getting user:', err);
+            });
         };
+
+        if ($scope.settings.asanaApiKey) {
+            configureAsana();
+        }
 
         $scope.$on(SETTING_CHANGED_EVENT, function (event, data) {
             var property = data[SETTING_CHANGED_PROPERTY_KEY];
             if (property == ASANA_API_KEY) {
-                var user = Users.one('me').get().then(function success() {
-                    $log.info('Successfully got user:', user);
-                    var data = user.data;
-                    if (data) {
-                        var workspaces = data.workspaces;
-                        if (workspaces) {
-                            $scope.asana.workspaces = workspaces;
-                        }
-                        else {
-                            // TODO: Error communicating with Asana.
-                        }
-                    }
-                    else {
+                configureAsana();
+            }
+        });
 
-                        // TODO: Error communicating with Asana.
-                    }
+        $scope.$watch('asana.selectedWorkspace', function (newValue, oldValue) {
+            if (newValue !== oldValue) {
+                if (newValue) {
+                    $log.debug('Selected workspace changed to "' + newValue.name + '" so fetching assigned tasks');
+                    $scope.asana.tasks = [];
+                    $scope.asana.isLoadingTasks = true;
+                    var queryParams = {
+                        assignee: 'me', // Only return tasks assigned to the user.
+                        workspace: newValue.id,
+                        completed_since: 'now'
+                    };
+                    Tasks.getList(queryParams).then(function success(tasks) {
+                        $log.debug('Successfully got completed tasks', tasks);
+                        $scope.asana.isLoadingTasks = false;
+                        var onSuccess = function success(task, tags) {
+                            $log.debug('Got tags', tags);
+                            task.tags = tags;
+                            task.isLoadingTags = false;
+                        };
+                        var onFail = function failure(task) {
+                            task.isLoadingTags = false;
+                            // TODO: Handle failure.
+                        };
 
-                }, function fail(err) {
-                    $log.error('Error getting user:', err);
-                });
+                        for (var i = 0; i < tasks.length; i++) {
+                            var task = tasks[i];
+                            var dent = task.id;
+                            $log.debug('Getting tags for task' + dent);
+                            task.isLoadingTags = true;
+                            var boundOnSuccess = _.partial(onSuccess, task);
+                            var boundOnFail = _.partial(onFail, task);
+                            Tasks.one(dent).getList('tags').then(boundOnSuccess, boundOnFail);
+                        }
+                        $scope.asana.tasks = tasks;
+                    }, function fail() {
+                        $scope.asana.isLoadingTasks = false;
+                    });
+
+                }
             }
         });
     })

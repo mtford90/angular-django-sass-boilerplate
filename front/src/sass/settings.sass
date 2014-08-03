@@ -13,16 +13,25 @@
   input
     border: none
     padding: 10px
+    +border-radius(5px, 5px)
+
+  #profile
+    position: relative
+    bottom: 3px
+    .profile-photo
+      width: 30px
+      +border-radius(15px, 15px)
 
   .setting
-
     position: relative
-
     .settings-label
       min-width: 90px
 
     .settings-value
       width: 120px
+
+      &#asana-api-key-value
+        width: 250px
 
       input
         width: 100%
@@ -56,6 +65,18 @@
     .asana-source
       position: relative
       bottom: 1px
+    .loading
+      position: default
+      width: 25px
+
+  .error
+    color: red
+
+  .loading
+    position: relative
+    bottom: 3px
+    width: 40px
+
 
 .toggle
   position: absolute

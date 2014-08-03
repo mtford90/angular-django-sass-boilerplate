@@ -4,11 +4,28 @@ angular.module('app.asana', ['restangular', 'base64'])
     .factory('AsanaRestangular', function (Restangular) {
         return Restangular.withConfig(function (RestangularConfigurer) {
             RestangularConfigurer.setBaseUrl('/asana');
+            RestangularConfigurer.addResponseInterceptor(function (data, op, what, url) {
+                if ('data' in data) {
+                    return data.data;
+                }
+            });
         });
     })
 
     .factory('Users', function (AsanaRestangular) {
         return AsanaRestangular.service('users');
+    })
+
+    .factory('Workspaces', function (AsanaRestangular) {
+        return AsanaRestangular.service('workspaces');
+    })
+
+    .factory('Projects', function (AsanaRestangular) {
+        return AsanaRestangular.service('projects');
+    })
+
+    .factory('Tasks', function (AsanaRestangular) {
+        return AsanaRestangular.service('tasks');
     })
 
     .constant('LOG_HEADERS', false)
@@ -92,7 +109,7 @@ angular.module('app.asana', ['restangular', 'base64'])
         };
     })
 
-    .constant('ERRORS', {
+    .constant('ASANA_ERRORS', {
         NO_API_KEY: 0
     })
 
@@ -100,7 +117,7 @@ angular.module('app.asana', ['restangular', 'base64'])
  * Use basic auth with asana API key.
  * See http://developer.asana.com/documentation/#api_keys for information on this
  */
-    .factory('APIKeyInterceptor', function ($base64, $log, $q, ASANA_API_KEY, SettingsService, ERRORS) {
+    .factory('APIKeyInterceptor', function ($base64, $log, $q, ASANA_API_KEY, SettingsService, ASANA_ERRORS) {
         return {
             request: function (config) {
                 if (config.url.substring(0, 6) == "/asana") {
@@ -120,7 +137,7 @@ angular.module('app.asana', ['restangular', 'base64'])
                     else {
                         return $q.reject({
                             reason: 'Cannot send an asana request without api key present',
-                            code: ERRORS.NO_API_KEY
+                            code: ASANA_ERRORS.NO_API_KEY
                         });
                     }
                 }

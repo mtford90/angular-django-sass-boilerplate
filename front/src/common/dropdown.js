@@ -6,11 +6,28 @@ angular.module('dropdown', [])
             restrict: 'E',
             templateUrl: 'dropdown.tpl.html',
             scope: {
-                'items': '='
+                'items': '=',
+                'value': '@',
+                'selected': '='
             },
+
             link: function (scope, element) {
-
-
+                function configure() {
+                    if (!scope.selected) {
+                        $log.debug('Nothing selected');
+                        if (scope.items) {
+                            if (scope.items.length) {
+                                scope.selected = scope.items[0];
+                            }
+                        }
+                    }
+                }
+                configure();
+                scope.$watch('items', configure);
+                scope.$watch('value', configure);
+                scope.selectItem = function (item) {
+                    scope.selected = item;
+                };
             }
         };
     });

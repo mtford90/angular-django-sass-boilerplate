@@ -89,10 +89,48 @@
                     <div class="settings-label">
                         <label for="asana-api-key">API key</label>
                     </div>
-                    <div class="settings-value">
-                        <input id="asana-api-key" ng-model="settings.asanaApiKey" ng-blur="asanaApiBlurred()">
+                    <div class="settings-value" id="asana-api-key-value">
+                        <input id="asana-api-key" ng-model="settings.asanaApiKey" ng-blur="asanaApiBlurred()"
+                               ng-disabled="asana.isLoading">
                     </div>
-                    <dropdown items="asana.workspaces"></dropdown>
+                    <img class="loading" src="assets/loader.gif" ng-if="asana.isLoading">
+
+                    <div id="profile">
+                        <img ng-src="{{asana.user.photo.image_128x128}}" ng-if="asana.user.photo" class="profile-photo">
+
+                        <div ng-if="asana.user.name" class="name">{{asana.user.name}}</div>
+                    </div>
+                    <div class="error" ng-if="asana.error">
+                        <span class="glyphicon glyphicon-minus-sign"></span> {{asana.error}}
+                    </div>
+                    <br>
+
+                    <div ng-if="!asana.isLoading && asana.user">
+                        <dropdown items="asana.workspaces" value="name" selected="asana.selectedWorkspace"></dropdown>
+                        <!--<dropdown items="asana.projects" value="name" selected="asana.selectedProject" ng-if="!asana.isLoadingProjects"></dropdown>-->
+                    </div>
+
+                </div>
+                <img class="loading" src="assets/loader.gif" ng-if="asana.isLoadingTasks">
+
+                <div class="row task"
+                     ng-repeat="task in asana.tasks"
+
+                <div class="col-md-12">
+                    <div jqyoui-draggable="{index: {{$index}},placeholder:true,animate:true}"
+                         data-drag="true"
+                         data-jqyoui-options="{revert: 'invalid'}">
+                        <span class="index">{{$index+1}}</span>
+                        <span class="title">{{task.name}}</span>
+                        <span ng-if="task.project" class="tag">{{task.project}}</span>
+                        <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
+                        <img class="loading" src="assets/loader.gif" ng-if="task.isLoadingTags">
+                    </div>
+                </div>
+
+                <div data-drop="true"
+                     jqyoui-droppable="{multiple:true}" style="width: 200px; height: 200px; border-style: solid; border-width: 1px">
+
                 </div>
             </div>
         </div>

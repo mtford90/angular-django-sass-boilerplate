@@ -15,7 +15,9 @@
     "ng-file-upload": "~1.4.0",
     "angular-base64": "~2.0.2",
     "angular-local-storage": "~0.0.5",
-    "restangular": "~1.4.0"
+    "restangular": "~1.4.0",
+    "jquery-ui": "~1.11.0",
+    "angular-dragdrop": "~1.0.7"
   },
   "devDependencies": {}
 }
