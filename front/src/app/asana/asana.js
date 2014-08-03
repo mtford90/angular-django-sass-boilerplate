@@ -1,38 +1,20 @@
-angular.module('app.asana', ['ngResource', 'base64'])
+angular.module('app.asana', ['restangular', 'base64'])
 
-//    .config(['$resourceProvider', function ($resourceProvider, $base64) {
-//        // Don't strip trailing slashes from calculated URLs
-////        $resourceProvider.defaults.stripTrailingSlashes = false;
-//    }])
 
-    .constant('RESOURCE_OPTS', (function () {
-        return {
-            update: {
-                method: "PATCH"
-            },
-            query: {
-                method: "GET",
-                isArray: true
+    .factory('AsanaRestangular', function (Restangular) {
+        return Restangular.withConfig(function (RestangularConfigurer) {
+            RestangularConfigurer.setBaseUrl('/asana');
+        });
+    })
 
-            },
-            list: {
-                method: "GET",
-                isArray: false
-            },
-            count: {
-                method: "GET",
-                isArray: false
-            }
-        };
-    })())
+    .factory('Users', function (AsanaRestangular) {
+        return AsanaRestangular.service('users');
+    })
 
     .constant('LOG_HEADERS', false)
 
     .factory('LogHTTPInterceptor', function ($q, jlog, $cookies, LOG_HEADERS) {
-
         var $log = jlog.loggerWithName('http');
-
-
         var serialize = function (obj) {
             var str = [];
             for (var p in obj) {
@@ -59,12 +41,9 @@ angular.module('app.asana', ['ngResource', 'base64'])
             if (data !== undefined && isJSON) {
                 $log.debug(prelude + ':', data);
             }
-
             else {
                 $log.debug(prelude);
             }
-
-
         }
 
         function logRequest(config) {
@@ -90,88 +69,89 @@ angular.module('app.asana', ['ngResource', 'base64'])
 
         return {
             response: function (response) {
-                logResponse(response);
+                if (response.config) {
+                    logResponse(response);
+                }
                 return response;
             },
-//            responseError: function (rejection) {
-//                logResponse(rejection);
-//                return $q.reject(rejection);
-//            },
+            responseError: function (rejection) {
+                if (rejection.config) {
+                    logResponse(rejection);
+                }
+                return $q.reject(rejection);
+            },
             request: function (config) {
                 logRequest(config);
                 return config;
+            },
+            requestError: function (rejection) {
+                $log.error('request error intercept');
+                logRequest(rejection);
+                return $q.reject(rejection);
             }
-//            requestError: function (rejection) {
-//                $log.error('request error intercept');
-//                logRequest(rejection);
-//                return $q.reject(rejection);
-//            }
         };
+    })
+
+    .constant('ERRORS', {
+        NO_API_KEY: 0
     })
 
 /**
  * Use basic auth with asana API key.
  * See http://developer.asana.com/documentation/#api_keys for information on this
  */
-    .factory('APIKeyInterceptor', function ($base64, $log, $q, ASANA_API_KEY, SettingsService) {
+    .factory('APIKeyInterceptor', function ($base64, $log, $q, ASANA_API_KEY, SettingsService, ERRORS) {
         return {
             request: function (config) {
-                $log.debug('intercepting request:', config);
-                var apiKey = SettingsService.get(ASANA_API_KEY);
-                if (apiKey) {
-                    apiKey = apiKey.trim();
-                    if (apiKey.length) {
-                        var a = apiKey + ':';
-                        $log.debug('unencoded:', a);
-                        var s = 'Basic ' +
-                            $base64.encode(a);
-                        $log.debug('encoded:', s);
-                        config.headers['Authorization'] = s;
-                        return config;
+                if (config.url.substring(0, 6) == "/asana") {
+                    var apiKey = SettingsService.get(ASANA_API_KEY);
+                    if (apiKey) {
+                        apiKey = apiKey.trim();
+                        if (apiKey.length) {
+                            var a = apiKey + ':';
+                            $log.debug('unencoded:', a);
+                            var s = 'Basic ' +
+                                $base64.encode(a);
+                            $log.debug('encoded:', s);
+                            config.headers['Authorization'] = s;
+                            return config;
+                        }
                     }
-
+                    else {
+                        return $q.reject({
+                            reason: 'Cannot send an asana request without api key present',
+                            code: ERRORS.NO_API_KEY
+                        });
+                    }
                 }
-                else {
-                    /**
-                     * TODO
-                     * For some reason there's an issue with returning promise rejections.
-                     * If $q.reject is returned then ui.router fucks up and doesn't display anything any more.
-                     * Therefore at the moment I'm 'intercepting' in each resource itself.
-                     * Pain in the ass.
-                     */
-                    $log.error('shouldnt be getting here');
-//                    $log.info('rejecting asana request as no api key');
-                    // If we uncomment the below and comment out the api key checks in the resource
-                    // services, ui-router no longer works.
-//                    return $q.reject('Cannot send an asana request without api key present');
-                }
+                return config;
             }
         };
     })
 
     .config(function ($httpProvider) {
-//        $httpProvider.interceptors.push('LogHTTPInterceptor');
+        $httpProvider.interceptors.push('LogHTTPInterceptor');
         $httpProvider.interceptors.push('APIKeyInterceptor');
     })
 
 
-    .factory('User', function ($resource, RESOURCE_OPTS) {
-        var opts = $.extend(true, {}, RESOURCE_OPTS);
-        return $resource(
-            "asana/users/me",
-            {},
-            opts
-        );
-    })
-
-    .factory('Workspace', function ($resource, RESOURCE_OPTS) {
-        var opts = $.extend(true, {}, RESOURCE_OPTS);
-        return $resource(
-            "asana/workspace",
-            {},
-            opts
-        );
-    })
+//    .factory('User', function ($resource, RESOURCE_OPTS) {
+//        var opts = $.extend(true, {}, RESOURCE_OPTS);
+//        return $resource(
+//            "asana/users/me",
+//            {},
+//            opts
+//        );
+//    })
+//
+//    .factory('Workspace', function ($resource, RESOURCE_OPTS) {
+//        var opts = $.extend(true, {}, RESOURCE_OPTS);
+//        return $resource(
+//            "asana/workspace",
+//            {},
+//            opts
+//        );
+//    })
 
 
 ;

@@ -96,7 +96,7 @@ angular.module('app.settings', [
 
     .constant('ASANA_API_KEY', 'asanaApiKey')
 
-    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, User, SettingsService, SOURCES,
+    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, Users, SettingsService, SOURCES,
                                                       SETTING_CHANGED_EVENT,
                                                       SETTING_CHANGED_PROPERTY_KEY,
                                                       SETTING_CHANGED_NEW_VALUE_KEY,
@@ -205,13 +205,14 @@ angular.module('app.settings', [
 
         $scope.asana = {
             workspaces: [],
-            projects: []
+            projects: [],
+            error: null
         };
 
         $scope.$on(SETTING_CHANGED_EVENT, function (event, data) {
             var property = data[SETTING_CHANGED_PROPERTY_KEY];
             if (property == ASANA_API_KEY) {
-                var user = User.get(function success() {
+                var user = Users.one('me').get().then(function success() {
                     $log.info('Successfully got user:', user);
                     var data = user.data;
                     if (data) {
@@ -224,6 +225,7 @@ angular.module('app.settings', [
                         }
                     }
                     else {
+
                         // TODO: Error communicating with Asana.
                     }
 
