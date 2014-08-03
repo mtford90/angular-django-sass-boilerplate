@@ -1,9 +1,9 @@
 angular.module('app.asana', ['ngResource', 'base64'])
 
-    .config(['$resourceProvider', function ($resourceProvider, $base64) {
-        // Don't strip trailing slashes from calculated URLs
-        $resourceProvider.defaults.stripTrailingSlashes = false;
-    }])
+//    .config(['$resourceProvider', function ($resourceProvider, $base64) {
+//        // Don't strip trailing slashes from calculated URLs
+////        $resourceProvider.defaults.stripTrailingSlashes = false;
+//    }])
 
     .constant('RESOURCE_OPTS', (function () {
         return {
@@ -113,9 +113,10 @@ angular.module('app.asana', ['ngResource', 'base64'])
  * Use basic auth with asana API key.
  * See http://developer.asana.com/documentation/#api_keys for information on this
  */
-    .factory('APIKeyInterceptor', function ($base64, $log, $q, ASANA_API_KEY,SettingsService) {
+    .factory('APIKeyInterceptor', function ($base64, $log, $q, ASANA_API_KEY, SettingsService) {
         return {
             request: function (config) {
+                $log.debug('intercepting request:', config);
                 var apiKey = SettingsService.get(ASANA_API_KEY);
                 if (apiKey) {
                     apiKey = apiKey.trim();
@@ -131,7 +132,18 @@ angular.module('app.asana', ['ngResource', 'base64'])
 
                 }
                 else {
-                    return $q.reject('Cannot send an asana request without api key present');
+                    /**
+                     * TODO
+                     * For some reason there's an issue with returning promise rejections.
+                     * If $q.reject is returned then ui.router fucks up and doesn't display anything any more.
+                     * Therefore at the moment I'm 'intercepting' in each resource itself.
+                     * Pain in the ass.
+                     */
+                    $log.error('shouldnt be getting here');
+//                    $log.info('rejecting asana request as no api key');
+                    // If we uncomment the below and comment out the api key checks in the resource
+                    // services, ui-router no longer works.
+//                    return $q.reject('Cannot send an asana request without api key present');
                 }
             }
         };
