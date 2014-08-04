@@ -5,6 +5,8 @@ angular.module('app', [
     'app.settings',
     'app.stats',
     'app.logging',
+    'app.db',
+    'app.debug',
     'ui.router',
     'ui.bootstrap',
     'ngResource',

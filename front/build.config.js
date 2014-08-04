@@ -64,10 +64,13 @@ module.exports = {
     vendor_files: {
         js: [
             'vendor/jquery/dist/jquery.js',
+            'vendor/jquery-ui/jquery-ui.js',
             'vendor/underscore/underscore.js',
             'vendor/angular/angular.js',
+//            'vendor/angular-ui/build/angular-ui.js',
             'vendor/ng-file-upload/angular-file-upload.js',
             'vendor/angular-bootstrap/ui-bootstrap-tpls.min.js',
+            'vendor/angular-ui-sortable/sortable.js',
             'vendor/angular-ui-router/release/angular-ui-router.js',
             'vendor/angular-cookies/angular-cookies.js',
             'vendor/angular-resource/angular-resource.js',

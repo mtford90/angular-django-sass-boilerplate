@@ -1,7 +1,8 @@
 angular.module('app.settings', [
     'app.asana',
     'LocalStorageModule',
-    'dropdown'
+    'dropdown',
+    'ui.sortable'
 ])
 
     .config(function config($stateProvider) {

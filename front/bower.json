@@ -17,7 +17,10 @@
     "angular-local-storage": "~0.0.5",
     "restangular": "~1.4.0",
     "jquery-ui": "~1.11.0",
-    "angular-dragdrop": "~1.0.7"
+    "angular-dragdrop": "~1.0.7",
+    "angular-ui": "~0.4.0",
+    "angular-ui-sortable": "~0.12.8",
+    "pouchdb": "2.2.3"
   },
   "devDependencies": {}
 }
