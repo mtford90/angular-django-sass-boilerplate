@@ -72,31 +72,31 @@
                             <input id="asana-api-key" ng-model="settings.asanaApiKey" ng-blur="asanaApiBlurred()"
                                    ng-disabled="asana.isLoading">
                         </div>
-                        <img class="loading" src="assets/loader.gif" ng-if="asana.isLoading">
+                        <img class="loading" src="assets/loader.gif" ng-if="$root.asana.isLoading">
 
                         <div id="profile">
-                            <img ng-src="{{asana.user.photo.image_128x128}}" ng-if="asana.user.photo"
+                            <img ng-src="{{$root.asana.user.photo}}" ng-if="$root.asana.user.photo"
                                  class="profile-photo">
 
-                            <div ng-if="asana.user.name" class="name">{{asana.user.name}}</div>
+                            <div ng-if="$root.asana.user.name" class="name">{{$root.asana.user.name}}</div>
                         </div>
                         <div class="error" ng-if="asana.error">
                             <span class="glyphicon glyphicon-minus-sign"></span> {{asana.error}}
                         </div>
                         <br>
 
-                        <div ng-if="!asana.isLoading && asana.user">
-                            <dropdown items="asana.workspaces" value="name"
-                                      selected="asana.selectedWorkspace"></dropdown>
+                        <div ng-if="!$root.asana.isLoading && $root.asana.user">
+                            <dropdown items="$root.asana.workspaces" value="name"
+                                      selected="$root.asana.selectedWorkspace"></dropdown>
                             <!--<dropdown items="asana.projects" value="name" selected="asana.selectedProject" ng-if="!asana.isLoadingProjects"></dropdown>-->
                         </div>
 
 
                     </div>
-                    <img class="loading" src="assets/loader.gif" ng-if="asana.isLoadingTasks">
+                    <img class="loading" src="assets/loader.gif" ng-if="$root.asana.isLoadingTasks">
 
                     <div class="row task"
-                         ng-repeat="task in asana.tasks">
+                         ng-repeat="task in $root.asana.tasks">
 
                         <div class="col-md-12">
                             <div>
