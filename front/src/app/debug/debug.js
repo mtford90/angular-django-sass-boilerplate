@@ -15,7 +15,30 @@ angular.module('app.debug', [
         });
     })
 
-    .controller('DebugCtrl', function DebugController($scope, $log) {
+    .controller('DebugCtrl', function DebugController($scope, $log, Database) {
+
+        $scope.error = null;
+
+        (function getNumDocuments() {
+            var map = function (doc) {
+                emit(doc);
+            };
+
+            var callback = function (err, response) {
+                if (!err) {
+                    $log.debug(response);
+
+                    $scope.$apply(function () {
+                        $scope.numDocuments = response.total_rows;
+                    });
+                }
+                else {
+                    $scope.error = err;
+                }
+            };
+
+            Database.instance.query(map, '_count', callback);
+        })();
 
 
 

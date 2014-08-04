@@ -7,7 +7,7 @@ angular.module('app.settings', [
 
     .config(function config($stateProvider) {
         $stateProvider.state('settings', {
-            url: '/settings',
+            url: '/settings?tab',
             views: {
                 "main": {
                     controller: 'SettingsCtrl',
@@ -27,13 +27,12 @@ angular.module('app.settings', [
     .constant('SETTING_CHANGED_NEW_VALUE_KEY', 'SETTING_CHANGED_NEW_VALUE_KEY')
     .constant('SETTING_CHANGED_PROPERTY_KEY', 'SETTING_CHANGED_PROPERTY_KEY')
 
-/**
- * Manages saving of settings down to localstorage or cookies depending on the
- * browser. Also broadcasts any changes to settings so other areas of the app
- * can react.
- */
+    /**
+     * Manages saving of settings down to localstorage or cookies depending on the
+     * browser. Also broadcasts any changes to settings so other areas of the app
+     * can react.
+     */
     .factory('SettingsService', function ($log, localStorageService, $rootScope, SETTING_CHANGED_EVENT, SETTING_CHANGED_OLD_VALUE_KEY, SETTING_CHANGED_NEW_VALUE_KEY, SETTING_CHANGED_PROPERTY_KEY) {
-
         /**
          * Broadcast that a particular setting has been changed so that other
          * areas of the app can react to this.
@@ -97,9 +96,64 @@ angular.module('app.settings', [
 
     .constant('ASANA_API_KEY', 'asanaApiKey')
 
-    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, Users, Workspaces, Projects, Tasks, SettingsService, SOURCES, SETTING_CHANGED_EVENT, SETTING_CHANGED_PROPERTY_KEY, SETTING_CHANGED_NEW_VALUE_KEY, ASANA_API_KEY, ASANA_ERRORS) {
+    /**
+     * Makes Asana settings available globally.
+     */
+    .factory('AsanaSettings', function ($rootScope, SettingsService) {
+        function resetAsana() {
+            $rootScope.asana = {
+                workspaces: [],
+                tasks: [],
+                error: null,
+                user: null,
+                isLoading: false,
+                selectedWorkspace: null,
+                isLoadingTasks: false
+            };
+        }
+
+        resetAsana();
+
+        return {
+            resetAsana: resetAsana()
+        };
+    })
+
+    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, Users, Workspaces, Projects, Tasks,
+                                                      SettingsService, SOURCES, SETTING_CHANGED_EVENT,
+                                                      SETTING_CHANGED_PROPERTY_KEY, SETTING_CHANGED_NEW_VALUE_KEY,
+                                                      ASANA_API_KEY, ASANA_ERRORS, Database,
+                                                      $stateParams, $state) {
 
         $scope.SOURCES = SOURCES; // So that we can access these from the templates.
+
+        (function configureTab() {
+            $scope.tabState = {
+                pomodoro: $stateParams.tab == 'pomodoro',
+                tasks: $stateParams.tab == 'tasks',
+                asana: $stateParams.tab == 'asana',
+                trello: $stateParams.tab == 'trello'
+            };
+            var tabIsSelected = false;
+            var watcher = function (tab, selected) {
+                if (selected) {
+                    $state.transitionTo('settings', {tab: tab}, {reloadOnSearch: false});
+                }
+            };
+            for (var tabName in $scope.tabState) {
+                if ($scope.tabState.hasOwnProperty(tabName)) {
+                    if (!tabIsSelected) {
+                        tabIsSelected = $scope.tabState[tabName];
+                    }
+                    var boundWatcher = _.partial(watcher, tabName);
+                    var watchVar = 'tabState.' + tabName;
+                    $scope.$watch(watchVar, boundWatcher);
+                }
+            }
+            if (!tabIsSelected) {
+                $scope.tabState['pomodoro'] = true;
+            }
+        })();
 
         $scope.settings = {
             pomodoroRounds: SettingsService.get('pomodoroRounds', 4),
@@ -115,23 +169,32 @@ angular.module('app.settings', [
         var settingsToBlur = ['asanaApiKey', 'trelloApiKey'];
 
         $scope.tasks = {
-            active: [
-                {
-                    title: 'Do something really well',
-                    project: 'project',
-                    tags: ['tag'],
-                    source: SOURCES.Asana
-                },
-                {
-                    title: 'blah de bla de bla',
-                    project: 'Retention Sprint #1',
-                    tags: ['label'],
-                    source: SOURCES.Trello
-                }
-            ],
-            asana: [],
-            trello: []
+            active: []
         };
+
+        function getTasks () {
+            function map(doc) {
+                if (doc.type == 'task') {
+                    emit(doc);
+                }
+            }
+            Database.instance.query({map: map}, {reduce:false}, function (err, response) {
+                if (!err) {
+                    var rows = response.rows;
+                    $log.info('Got tasks from db:', rows);
+                    $scope.$apply(function () {
+                        $scope.tasks.active = rows;
+                    });
+                }
+                else {
+                    // TODO: Handle database error
+                }
+            });
+        }
+
+        getTasks();
+
+
 
         /**
          * Toggles the specified boolean setting.
@@ -265,6 +328,19 @@ angular.module('app.settings', [
                 configureAsana();
             }
         });
+
+        $scope.useTask = function (task) {
+            $log.debug('put', task);
+            Database.instance.put({
+                name: task.name,
+                source: SOURCES.Asana,
+                type: 'task'
+            }, task.id).then(function () {
+                $scope.$apply(function () {
+                    $scope.tasks.active.push(task);
+                });
+            });
+        };
 
         $scope.$watch('asana.selectedWorkspace', function (newValue, oldValue) {
             if (newValue !== oldValue) {

@@ -7,7 +7,7 @@
     <div class="row">
         <div class="col-md-12">
             <tabset>
-                <tab heading="Pomodoro">
+                <tab heading="Pomodoro" active="tabState.pomodoro">
                     <div class="setting">
                         <div class="settings-label">
                             <label for="rounds">Rounds</label>
@@ -41,7 +41,7 @@
                         </div>
                     </div>
                 </tab>
-                <tab heading="Tasks">
+                <tab heading="Tasks" active="tabState.tasks">
                     <div ui-sortable ng-model="tasks.active">
                         <div ng-repeat="task in tasks.active" style="cursor: move;" class="task">
                                 <span class="index">
@@ -55,15 +55,15 @@
                                     <span ng-repeat="tag in task.tags" class="tag">{{tag}}</span>
                                 </span>
                                 <span>
-                                           <span ng-if="task.source == SOURCES.Asana"><img src="assets/asana-icon.png"
-                                                                                           class="source asana-source"></span>
-                                <span ng-if="task.source == SOURCES.Trello"><img src="assets/trello-icon.png"
-                                                                                 class="source"></span>
+                                       <span ng-if="task.source == SOURCES.Asana"><img src="assets/asana-icon.png"
+                                                                                       class="source asana-source"></span>
+                                    <span ng-if="task.source == SOURCES.Trello"><img src="assets/trello-icon.png"
+                                                                                     class="source"></span>
                                 </span>
                         </div>
                     </div>
                 </tab>
-                <tab heading="Asana">
+                <tab heading="Asana" active="tabState.asana">
                     <div class="setting">
                         <div class="settings-label">
                             <label for="asana-api-key">API key</label>
@@ -91,23 +91,26 @@
                             <!--<dropdown items="asana.projects" value="name" selected="asana.selectedProject" ng-if="!asana.isLoadingProjects"></dropdown>-->
                         </div>
 
+
                     </div>
                     <img class="loading" src="assets/loader.gif" ng-if="asana.isLoadingTasks">
 
                     <div class="row task"
-                         ng-repeat="task in asana.tasks"
+                         ng-repeat="task in asana.tasks">
 
-                    <div class="col-md-12">
-                        <div>
-                            <span class="index">{{$index+1}}</span>
-                            <span class="title">{{task.name}}</span>
-                            <span ng-if="task.project" class="tag">{{task.project}}</span>
-                            <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
-                            <img class="loading" src="assets/loader.gif" ng-if="task.isLoadingTags">
+                        <div class="col-md-12">
+                            <div>
+                                <span class="index">{{$index+1}}</span>
+                                <span class="title">{{task.name}}</span>
+                                <span ng-if="task.project" class="tag">{{task.project}}</span>
+                                <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
+                                <img class="loading" src="assets/loader.gif" ng-if="task.isLoadingTags">
+                                <div class="btn btn-default" ng-click="useTask(task)">Add</div>
+                            </div>
                         </div>
                     </div>
                 </tab>
-                <tab heading="Trello">
+                <tab heading="Trello" active="tabState.trello">
                     <div class="setting">
                         <div class="settings-label">
                             <label for="trello-api-key">API key</label>
