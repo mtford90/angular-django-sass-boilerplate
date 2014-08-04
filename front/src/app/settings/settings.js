@@ -1,8 +1,7 @@
 angular.module('app.settings', [
     'app.asana',
     'LocalStorageModule',
-    'dropdown',
-    'ngDragDrop'
+    'dropdown'
 ])
 
     .config(function config($stateProvider) {
@@ -107,11 +106,7 @@ angular.module('app.settings', [
             pomodoroShortBreak: SettingsService.get('pomodoroShortBreak', 5),
             pomodoroLongBreak: SettingsService.get('pomodoroLongBreak', 15),
             asanaApiKey: SettingsService.get(ASANA_API_KEY),
-            trelloApiKey: SettingsService.get('trelloApiKey'),
-            pomodoroHidden: SettingsService.getBoolean('pomodoroHidden', true),
-            tasksHidden: SettingsService.getBoolean('tasksHidden', true),
-            asanaHidden: SettingsService.getBoolean('asanaHidden', true),
-            trelloHidden: SettingsService.getBoolean('trelloHidden', true)
+            trelloApiKey: SettingsService.get('trelloApiKey')
         };
 
         // These settings are only saved to local storage when onBlur event is fired.
@@ -144,11 +139,6 @@ angular.module('app.settings', [
         $scope.toggle = function (setting) {
             $scope.settings[setting] = !$scope.settings[setting];
         };
-
-        $scope.togglePomodoro = _.partial($scope.toggle, 'pomodoroHidden');
-        $scope.toggleTasks = _.partial($scope.toggle, 'tasksHidden');
-        $scope.toggleAsana = _.partial($scope.toggle, 'asanaHidden');
-        $scope.toggleTrello = _.partial($scope.toggle, 'trelloHidden');
 
         /**
          * Call the correct function on SettingsService depending on whether a

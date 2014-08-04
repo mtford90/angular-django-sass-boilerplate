@@ -76,9 +76,7 @@ module.exports = {
             'vendor/modernizr/modernizr.js',
             'vendor/angular-local-storage/angular-local-storage.js',
             'vendor/angular-base64/angular-base64.js',
-            'vendor/restangular/src/restangular.js',
-            'vendor/jquery-ui.js',
-            'vendor/angular-dragdrop/src/angular-dragdrop.js'
+            'vendor/restangular/src/restangular.js'
         ],
         css: [
             'vendor/bootstrap/dist/css/*.css*',
