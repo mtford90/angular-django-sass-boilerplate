@@ -1,5 +1,5 @@
 /**
- * A configurable logging service that wraps $log
+ * A configurable logging service that wraps $log and can also intercept and log http requests.
  */
 angular.module('app.logging', [])
 
@@ -11,6 +11,8 @@ angular.module('app.logging', [])
         warn: 3,
         error: 4
     })
+
+    .constant('LOG_HEADERS', false)
 
     .factory('jlogConfig', function (logLevels) {
         var ll = {
@@ -88,4 +90,91 @@ angular.module('app.logging', [])
                 return new Logger(name);
             }
         };
-    });
+    })
+
+
+    .factory('LogHTTPInterceptor', function ($q, jlog, $cookies, LOG_HEADERS) {
+        var $log = jlog.loggerWithName('http');
+        var serialize = function (obj) {
+            var str = [];
+            for (var p in obj) {
+                if (obj.hasOwnProperty(p)) {
+                    str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+                }
+            }
+            return '?' + str.join("&");
+        };
+
+        function logResponse(response) {
+            var data = response.data;
+            var config = response.config;
+            var url = config.url;
+            if (config.params) {
+                url += serialize(config.params);
+            }
+            var prelude = response.status + ' ' + config.method + ' ' + url;
+            var contentType = response.headers('Content-Type');
+            var isJSON = false;
+            if (contentType) {
+                isJSON = contentType.indexOf('json') > 0;
+            }
+            if (data !== undefined && isJSON) {
+                $log.debug(prelude + ':', data);
+            }
+            else {
+                $log.debug(prelude);
+            }
+        }
+
+        function logRequest(config) {
+            var url = config.url;
+            if (config.params) {
+                url += serialize(config.params);
+            }
+            var prelude;
+            if (LOG_HEADERS) {
+                prelude = '(' + JSON.stringify(config.headers) + ') ' + config.method + ' ' + url;
+            }
+            else {
+                prelude = config.method + ' ' + url;
+            }
+
+            if (config.data === undefined) {
+                $log.debug(prelude);
+            }
+            else {
+                $log.debug(prelude + ':', config.data);
+            }
+        }
+
+        return {
+            response: function (response) {
+                if (response.config) {
+                    logResponse(response);
+                }
+                return response;
+            },
+            responseError: function (rejection) {
+                if (rejection.config) {
+                    logResponse(rejection);
+                }
+                return $q.reject(rejection);
+            },
+            request: function (config) {
+                logRequest(config);
+                return config;
+            },
+            requestError: function (rejection) {
+                $log.error('request error intercept');
+                logRequest(rejection);
+                return $q.reject(rejection);
+            }
+        };
+    })
+
+    .config(function ($httpProvider) {
+        $httpProvider.interceptors.push('LogHTTPInterceptor');
+    })
+
+
+;

@@ -1,5 +1,6 @@
 angular.module('app.settings', [
-    'app.asana',
+    'app.asana.restangular',
+    'app.asana.data',
     'LocalStorageModule',
     'dropdown',
     'ui.sortable'
@@ -96,188 +97,11 @@ angular.module('app.settings', [
 
     .constant('ASANA_API_KEY', 'asanaApiKey')
 
-/**
- * Simple layer over Restangular to pull stuff from Asana and return plain JS objects that can then be
- * stored in PouchDB. Performs validation and stuff also.
- * TODO: Move over into asana.js
- */
-    .factory('AsanaDataAccess', function ($q, Users, Tasks, $log, SettingsService, ASANA_API_KEY, Database,ASANA_ERRORS) {
-
-        var requiredUserFields = ['workspaces', 'name', 'id'];
-
-        /**
-         * Deal with standard errors returned from Asana API.
-         * @param deferred
-         * @param err
-         */
-        function errorHandler(deferred, err) {
-            $log.error('Error getting user from Asana:', err);
-            var humanReadableError = 'Unknown Error';
-            if (err.reason) {
-                if (err.code == ASANA_ERRORS.NO_API_KEY) {
-                    deferred.resolve();
-                }
-                else {
-                    humanReadableError = err.reason;
-                }
-            }
-            else if (err.status == 401) {
-                humanReadableError = 'Invalid API Key';
-            }
-            else if (err.data) {
-                if (err.errors) {
-                    if (err.data.errors.length) {
-                        humanReadableError = err.data.errors[0];
-                    }
-                    else {
-                        humanReadableError = 'Unknown Error';
-                    }
-                }
-                else {
-                    humanReadableError = 'Unknown Error';
-                }
-            }
-            else {
-                humanReadableError = 'Unknown Error: HTTP ' + err.status;
-            }
-            deferred.reject(humanReadableError);
-        }
-
-        function handlePouchError(deferred, err) {
-            var message = err.message;
-            if (message) {
-                deferred.reject('Database error: ' + message + ' (' + err.status + ')');
-            }
-            else {
-                deferred.reject('Database error: Unknown');
-            }
-        }
-
-        return {
-            getUser: function (remote) {
-                var deferred = $q.defer();
-                function getUserRemotely() {
-                    Users.one('me').get().then(function success(user) {
-                        for (var i = 0; i < requiredUserFields.length; i++) {
-                            var field = requiredUserFields[i];
-                            if (user[field] === undefined) {
-                                deferred.reject('Missing field ' + field + ' from Asana response for users');
-                                return;
-                            }
-                        }
-                        var processedUser = {
-                            name: user.name,
-                            photo: user.photo.image_128x128,
-                            id: user.id,
-                            workspaces: user.workspaces,
-                            type: 'user',
-                            apiKey: SettingsService.get(ASANA_API_KEY)
-                        };
-                        Database.instance.put(processedUser, 'ActiveUser', function (err, response) {
-                            if (!err) {
-                                deferred.resolve(processedUser);
-                            }
-                            else {
-                                deferred.reject(err);
-                            }
-                        });
-                    }, _.partial(errorHandler, deferred));
-                }
-
-                if (remote) {
-                    $log.debug('getting user remotely');
-                    getUserRemotely();
-                }
-                else {
-                    $log.debug('trying to get user locally');
-                    Database.instance.get('ActiveUser', function (err, doc) {
-                        if (err) {
-                            getUserRemotely();
-                        }
-                        else {
-                            deferred.resolve(doc);
-                        }
-                    });
-                }
-                return deferred.promise;
-            },
-
-            clear: function (dbId) {
-                var deferred = $q.defer();
-                Database.instance.remove(dbId).then(function success() {
-                    deferred.resolve();
-                }, function error(err) {
-                    handlePouchError(deferred, err);
-                });
-                return deferred.promise;
-            },
-            clearUser: function () {
-                $log.debug('clearing user');
-                return this.clear('ActiveUser');
-            },
-            getTasks: function (workspaceId, remote) {
-                var deferred = $q.defer();
-
-                function getTasksRemotely() {
-                    var queryParams = {
-                        assignee: 'me', // Only return tasks assigned to the user.
-                        workspace: workspaceId,
-                        completed_since: 'now'
-                    };
-                    var boundErrorHandler = _.partial(errorHandler, deferred);
-                    Tasks.getList(queryParams).then(function success(tasks) {
-                        if (tasks.length) {
-                            var processedTasks = [];
-                            var onGetTaskSuccess = function success(task, tags) {
-                                $log.debug('Got tags', tags);
-                                var processedTags = [];
-                                for (var i = 0; i < tags.length; i++) {
-                                    var tag = tags[i];
-                                    processedTags.push({
-                                        name: tag.name,
-                                        id: tag.id
-                                    });
-                                }
-                                processedTasks.push({
-                                    name: task.name,
-                                    id: task.id,
-                                    tags: processedTags
-                                });
-                                if (processedTasks.length == tasks.length) {
-                                    $log.debug('successfully got tasks:', processedTasks);
-                                    Database.instance.put({tasks: processedTasks}, dbId).then(function (response) {
-                                        $log.debug('yooo', err, response);
-                                        deferred.resolve(processedTasks);
-                                    }, function (err) {
-                                        handlePouchError(deferred, err);
-                                    });
-                                }
-                            };
-                            for (var i = 0; i < tasks.length; i++) {
-                                var task = tasks[i];
-                                var dent = task.id;
-                                $log.debug('Getting tags for task' + dent);
-                                task.isLoadingTags = true;
-                                var boundOnSuccess = _.partial(onGetTaskSuccess, task);
-                                Tasks.one(dent).getList('tags').then(boundOnSuccess, boundErrorHandler);
-                            }
-                        }
-                        else {
-                            deferred.resolve([]);
-                        }
-                    }, boundErrorHandler);
-                }
-
-                getTasksRemotely();
-                return deferred.promise;
-            }
-        };
-    })
 
 /**
  * Manages Asana settings in $rootScope.
  */
-    .factory('AsanaSettings', function ($rootScope, SettingsService, Users, Tasks, ASANA_ERRORS, $log, SETTING_CHANGED_EVENT, ASANA_API_KEY, SETTING_CHANGED_PROPERTY_KEY, AsanaDataAccess) {
+    .factory('AsanaSettings', function ($rootScope, SettingsService, ASANA_ERRORS, $log, SETTING_CHANGED_EVENT, ASANA_API_KEY, SETTING_CHANGED_PROPERTY_KEY, AsanaDataAccess) {
 
         /**
          * Setup Asana settings in $rootScope for the first time.
@@ -301,33 +125,27 @@ angular.module('app.settings', [
         function configureAsanaOnAPIKeyChange() {
             resetAsana();
             $rootScope.asana.isLoading = true;
-            AsanaDataAccess.clearUser().then(function () {
-                AsanaDataAccess.getUser().then(function success(user) {
-                    $rootScope.asana.isLoading = false;
-                    if (user) {
-                        $log.info('Successfully got user:', user);
-                        $rootScope.asana.user = user;
-                        var workspaces = user.workspaces;
-                        $rootScope.asana.workspaces = workspaces;
-                        if (workspaces.length) {
-                            $rootScope.asana.selectedWorkspace = workspaces[0];
-                        }
+            AsanaDataAccess.getUser().then(function success(user) {
+                $rootScope.asana.isLoading = false;
+                if (user) {
+                    $log.info('Successfully got user:', user);
+                    $rootScope.asana.user = user;
+                    var workspaces = user.workspaces;
+                    $rootScope.asana.workspaces = workspaces;
+                    if (workspaces.length) {
+                        $rootScope.asana.selectedWorkspace = workspaces[0];
                     }
-                    else {
-                        $log.debug('No user returned, therefore clearing');
-                        $rootScope.asana.user = null;
-                        $rootScope.asana.workspaces = [];
-                        $rootScope.asana.selectedWorkspace = null;
-                    }
-                }, function failure(err) {
-                    $rootScope.asana.isLoading = false;
-                    $rootScope.asana.error = err;
-                });
-            }, function (err) {
+                }
+                else {
+                    $log.debug('No user returned, therefore clearing');
+                    $rootScope.asana.user = null;
+                    $rootScope.asana.workspaces = [];
+                    $rootScope.asana.selectedWorkspace = null;
+                }
+            }, function failure(err) {
                 $rootScope.asana.isLoading = false;
                 $rootScope.asana.error = err;
             });
-
         }
 
         resetAsana();

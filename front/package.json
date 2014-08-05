@@ -52,6 +52,7 @@
     "grunt-text-replace": "~0.3.12",
     "browserify": "~4.1.11",
     "grunt-browserify": "~2.1.0",
-    "grunt-contrib-htmlmin": "~0.3.0"
+    "grunt-contrib-htmlmin": "~0.3.0",
+    "es5-shim": "~4.0.1"
   }
 }
