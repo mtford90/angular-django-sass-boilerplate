@@ -262,7 +262,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             var deferred = $q.defer();
             pouch.put(index).then(function () {
                 // Kick off initial update.
-                $log.debug('initial');
+                $log.debug('Kicking off initial update for index ' + name);
                 pouch.query(name, {stale: 'update_after'}).then(deferred.resolve, deferred.reject);
             }, function (err) {
                 if (err.status == 409) { // Already exists.
@@ -280,12 +280,12 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             return installIndex({
                 _id: '_design/active_user_index',
                 views: {
-                    active_user_index: {
+                    'active_user_index': {
                         map: function (doc) {
                             if (doc.type == 'user' && doc.active) {
                                 emit(doc);
                             }
-                        }
+                        }.toString()
                     }
                 }
             }, 'active_user_index');
@@ -344,9 +344,11 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                         deferred = $q.defer();
                         dbInstance.destroy(function (err) {
                             if (err) {
+                                $log.error('Unable to destroy database:', err);
                                 resetDeferred.reject(err);
                             }
                             else {
+                                $log.debug('Successfully destroyed database');
                                 configurePouchDB();
                                 // Reset succeeds/fails if configuration succeeds/fails.
                                 deferred.promise.then(resetDeferred.resolve, resetDeferred.reject);
@@ -385,7 +387,9 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
 
         function getUser() {
             return getPouch(function (deferred, pouch) {
+                pouch.query('active_user_index').then(function (res) {
 
+                }, deferred.reject);
             });
 
         }

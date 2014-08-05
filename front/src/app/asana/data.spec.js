@@ -17,21 +17,17 @@ describe('data.LazyPouchDB', function () {
      * wrong.
      * @param lazyPouchDB service
      */
-    function reset (lazyPouchDB) {
+    function reset(lazyPouchDB) {
+
         var didReset = false;
         var didFail = false;
         runs(function () {
             lazyPouchDB.reset().then(function () {
-                console.error('reset succeeded');
+                console.log('reset succeeded');
                 didReset = true;
             }, function (e) {
-                if (e.name == 'not_found') {
-                    console.error('reset failed', e);
-                    didReset = true;
-                }
-                else {
-                    didFail = true;
-                }
+                console.error('reset failed', e);
+                didFail = true;
             });
         });
         waitsFor(function () {
@@ -39,15 +35,16 @@ describe('data.LazyPouchDB', function () {
             return didReset || didFail;
         }, 'the PouchDB instance to be reset', 1000);
         runs(function () {
+            console.log('Confirming that reset has succeeded');
             expect(didFail).toBeFalsy();
             expect(didReset).toBeTruthy();
         });
     }
 
     it('should return a pouchdb instance eventually', inject(function (lazyPouchDB) {
-        reset(lazyPouchDB);
         var instance = null;
         var err = null;
+        reset(lazyPouchDB);
         runs(function () {
             var promise = lazyPouchDB.promise;
             dump(promise);
@@ -90,6 +87,29 @@ describe('data.LazyPouchDB', function () {
             expect(instance).toBeTruthy();
         });
     }));
+
+    it('should return a user object', inject(function (AsanaDataAccessLocal, lazyPouchDB) {
+        var instance = null;
+        var err = null;
+        reset(lazyPouchDB);
+        runs(function () {
+            AsanaDataAccessLocal.getUser().then(function (user) {
+                instance = user;
+            }, function (e) {
+                err = e;
+            });
+        });
+        waitsFor(function () {
+            // Promises only complete on angular $digests.
+            $rootScope.$apply();
+            return instance || err;
+        }, 'the PouchDB instance promise to return a user', 1000);
+        runs(function () {
+            expect(err).toBeFalsy();
+            expect(instance).toBeTruthy();
+        });
+    }));
+
 
 });
 
