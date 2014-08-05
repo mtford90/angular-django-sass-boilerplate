@@ -263,8 +263,15 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             pouch.put(index).then(function () {
                 // Kick off initial update.
                 $log.debug('Kicking off initial update for index ' + name);
-                pouch.query(name, {stale: 'update_after'}).then(deferred.resolve, deferred.reject);
+                pouch.query(name, {stale: 'update_after'}).then(function (resp) {
+                    $log.debug('successfully executed initial update for index ' + name + ':', resp);
+                    deferred.resolve(resp);
+                }, function (err) {
+                    $log.error('error executing initial update for index ' + name + ':', err);
+                    deferred.reject(err);
+                });
             }, function (err) {
+                $log.error('error installing index ' + name, err);
                 if (err.status == 409) { // Already exists.
                     $log.debug('index ' + name + ' already exists, therefore ignoring');
                     deferred.resolve();
@@ -276,26 +283,43 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             return deferred.promise;
         }
 
-        function installActiveUserIndex() {
+        function _installIndex(name, map) {
+            var views = {};
+            views[name] = {map:map.toString()};
             return installIndex({
-                _id: '_design/active_user_index',
-                views: {
-                    'active_user_index': {
-                        map: function (doc) {
-                            if (doc.type == 'user' && doc.active) {
-                                emit(doc._id, doc);
-                            }
-                        }.toString()
+                _id: '_design/' + name,
+                views: views
+            }, name);
+        }
+
+        function installActiveUserIndex() {
+            return _installIndex('active_user_index',
+                function map(doc) {
+                    if (doc.type == 'user' && doc.active) {
+                        emit(doc._id, doc);
                     }
                 }
-            }, 'active_user_index');
+            );
+        }
+
+        function installAsanaTasksIndex() {
+            return _installIndex('asana_tasks_index',
+                function map(doc) {
+                    if (doc.type == 'task' && doc.source == 'asana') {
+                        emit(doc._id, doc);
+                    }
+                }
+            );
         }
 
         function initialisePouchDB() {
             // TODO: Setup design documents.
             $log.debug('Initialising PouchDB');
             installActiveUserIndex().then(function () {
-                deferred.resolve(pouch);
+                installAsanaTasksIndex().then(function () {
+                    deferred.resolve(pouch);
+                }, deferred.reject);
+
             }, deferred.reject);
         }
 
@@ -392,7 +416,11 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
         }
 
         function getTasks() {
+            var deferred = $q.defer();
+            lazyPouchDB.promise.then(function (pouch) {
 
+            }, deferred.reject);
+            return deferred.promise;
         }
 
         /**
