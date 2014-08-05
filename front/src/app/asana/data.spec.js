@@ -192,5 +192,59 @@ describe('data.LazyPouchDB', function () {
 
     });
 
+    describe('Tasks', function () {
+        var tasks;
+        var err;
+
+        // Here we just want to get the PouchDB back to it's initial state before each test is run.
+        beforeEach(inject(function (lazyPouchDB) {
+            tasks = undefined;
+            err = undefined;
+            reset(lazyPouchDB);
+        }));
+
+        function getTasks() {
+            inject(function (AsanaDataAccessLocal) {
+                runs(function () {
+                    AsanaDataAccessLocal.getTasks().then(function (_tasks) {
+                        tasks = _tasks;
+                    }, function (e) {
+                        err = e;
+                    });
+                });
+                waitsFor(function () {
+                    // Promises only complete on angular $digests.
+                    $rootScope.$apply();
+                    return (tasks || tasks == []) || err;
+                }, 'the PouchDB instance promise to return tasks', 1000);
+            });
+        }
+
+        it('should return [] if no tasks', inject(function () {
+            getTasks();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(tasks).toEqual([]);
+            });
+        }));
+
+        it('should return the task if added one task', inject(function () {
+            expect(false).toBeTruthy();
+        }));
+
+        it('should return the task if added multiple tasks', inject(function () {
+            expect(false).toBeTruthy();
+        }));
+
+        it('should return all tasks minus the removed task when removed', inject(function () {
+            expect(false).toBeTruthy();
+        }));
+
+        it('should return no tasks if cleared', inject(function () {
+            expect(false).toBeTruthy();
+        }));
+
+    });
+
 });
 

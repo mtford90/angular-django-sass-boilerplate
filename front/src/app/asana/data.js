@@ -257,7 +257,14 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
         var pouch = null;
         var deferred = $q.defer();
 
-        function installIndex(index, name) {
+        /**
+         * Takes a couchdb design doc and inserts this into the database.
+         * @param index
+         * @param name
+         * @returns promise
+         * @private
+         */
+        function __installIndex(index, name) {
             $log.debug('installing index:', index, name);
             var deferred = $q.defer();
             pouch.put(index).then(function () {
@@ -283,17 +290,26 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             return deferred.promise;
         }
 
-        function _installIndex(name, map) {
+        /**
+         * Given a name and a map function, creates a pouchdb 'index'
+         * An index is essentially a couchdb design document with a single view.
+         * See http://pouchdb.com/2014/05/01/secondary-indexes-have-landed-in-pouchdb.html for more explanations on this
+         * and why they're useful.
+         * @param name the name of the index
+         * @param map a couchdb/puchdb map function
+         * @returns promise a promise to install the new index
+         */
+        function installIndex(name, map) {
             var views = {};
             views[name] = {map:map.toString()};
-            return installIndex({
+            return __installIndex({
                 _id: '_design/' + name,
                 views: views
             }, name);
         }
 
         function installActiveUserIndex() {
-            return _installIndex('active_user_index',
+            return installIndex('active_user_index',
                 function map(doc) {
                     if (doc.type == 'user' && doc.active) {
                         emit(doc._id, doc);
@@ -303,7 +319,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
         }
 
         function installAsanaTasksIndex() {
-            return _installIndex('asana_tasks_index',
+            return installIndex('asana_tasks_index',
                 function map(doc) {
                     if (doc.type == 'task' && doc.source == 'asana') {
                         emit(doc._id, doc);
@@ -415,10 +431,28 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             return deferred.promise;
         }
 
+        /**
+         * Given rows from PouchDB, pulls out the record values and returns as an
+         * array
+         * @param rows from PouchDB
+         * @returns {Array}
+         */
+        function processRows(rows) {
+            var processedRows = [];
+            for (var i = 0; i < rows.length; i++) {
+                var row = processedRows[i];
+                processedRows.push(row.value);
+            }
+            return processedRows;
+        }
+
         function getTasks() {
             var deferred = $q.defer();
             lazyPouchDB.promise.then(function (pouch) {
-
+                pouch.query('asana_tasks_index').then(function (res) {
+                    $log.debug('asana_tasks_index:', res);
+                    deferred.resolve(processRows(res.rows));
+                });
             }, deferred.reject);
             return deferred.promise;
         }
@@ -502,11 +536,61 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             return deferred.promise;
         }
 
+        function addTask(task) {
+            task.type = 'task';
+            if (!task._id) {
+                task._id = task.id;
+            }
+            return retryUntilWritten(doc);
+        }
+
+        function removeTask(taskId) {
+
+        }
+
+        function clearTasks() {
+            var deferred = $q.defer();
+            this.getTasks().then(function (tasks) {
+                var numDeleted = 0;
+                for (var i=0;i<tasks.length;i++) {
+                    var task = tasks[i];
+                    db.remove(task);
+                }
+            }, function (err) {
+                $log.error('Error clearing tasks:', err);
+                deferred.reject(err);
+            });
+            return deferred;
+        }
+
+        function addTasks(tasks) {
+            var deferred = $q.defer();
+            var numWritten = 0;
+            var onSuccess = function () {
+                numWritten++;
+                if (numWritten == tasks.length) {
+                    deferred.resolve(tasks);
+                }
+            };
+            var onFail = function (err) {
+                deferred.reject(err);
+            };
+            for (var i=0;i<tasks.length;i++) {
+                var task = tasks[i];
+                addTask(task).then(onSuccess, onFail);
+            }
+            return deferred;
+        }
+
         return {
             getUser: getUser,
             getTasks: getTasks,
             clearActiveUser: clearActiveUser,
-            setActiveUser: setActiveUser
+            setActiveUser: setActiveUser,
+            addTask: addTask,
+            clearTasks: clearTasks,
+            removeTask: removeTask,
+            addTasks: addTasks
         };
     })
 
