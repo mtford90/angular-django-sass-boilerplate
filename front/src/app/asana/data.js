@@ -283,7 +283,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                     'active_user_index': {
                         map: function (doc) {
                             if (doc.type == 'user' && doc.active) {
-                                emit(doc);
+                                emit(doc._id, doc);
                             }
                         }.toString()
                     }
@@ -367,42 +367,118 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
 
     // A set of stored procedures, mirroring AsanaDataAccess but hitting the local PouchDB instance
     // instead.
-    .factory('AsanaDataAccessLocal', function ($q, $log, lazyPouchDB, HandleError) {
+    .factory('AsanaDataAccessLocal', function ($q, $log, lazyPouchDB) {
 
-        function getErrorHandler(deferred) {
-            return _.partial(HandleError.pouch, deferred);
-        }
-
-        /**
-         * Get hold of a pouch instance and return via callback. If failure, then reject
-         * the promise.
-         * @param callback
-         * @returns promise
-         */
-        function getPouch(callback) {
+        function getUser() {
             var deferred = $q.defer();
-            lazyPouchDB.then(_.partial(callback, deferred), getErrorHandler(deferred));
+            lazyPouchDB.promise.then(function (pouch) {
+                pouch.query('active_user_index').then(function (res) {
+                    $log.debug('active_user_index:', res);
+                    if (res.rows.length > 1) {
+                        $log.warn('More than one active user?', res.rows);
+                    }
+                    if (res.rows.length) {
+                        var userRow = res.rows[0];
+                        $log.debug('Found an active user:', userRow);
+                        deferred.resolve(userRow.value);
+                    }
+                    else {
+                        $log.debug('Couldnt find a user');
+                        deferred.resolve(null);
+                    }
+                }, deferred.reject);
+            }, deferred.reject);
             return deferred.promise;
         }
 
-        function getUser() {
-            return getPouch(function (deferred, pouch) {
-                pouch.query('active_user_index').then(function (res) {
-
-                }, deferred.reject);
-            });
+        function getTasks() {
 
         }
 
-        function getTasks() {
-            return getPouch(function (deferred, pouch) {
+        /**
+         * This is a nice little workaround for the confusing revision identifiers
+         * with pouchdb.
+         * https://github.com/pouchdb/pouchdb/issues/1691 demonstrates the confusion nicely and contains
+         * the function below that has been adapted to latest pouch versions.
+         * @param doc
+         * @returns promise
+         */
+        function retryUntilWritten(doc) {
+            var deferred = $q.defer();
+            lazyPouchDB.promise.then(function (db) {
+                db.get(doc._id).then(function (origDoc) {
+                    doc._rev = origDoc._rev;
+                    return db.put(doc, doc._id).then(deferred.resolve, deferred.reject);
+                }, function (err) {
+                    var HTTP_CONFLICT = 409;
+                    if (err.status === HTTP_CONFLICT) {
+                        return retryUntilWritten(doc);
+                    } else { // new doc
+                        return db.put(doc, doc._id).then(deferred.resolve, deferred.reject);
+                    }
+                });
+            }, deferred.reject);
+            return deferred.promise;
+        }
 
+        function clearActiveUser() {
+            var deferred = $q.defer();
+            getUser().then(function (existingUser) {
+                if (existingUser) {
+                    existingUser.active = false;
+                    if (!existingUser._id) {
+                        existingUser._id = existingUser.id;
+                    }
+                    retryUntilWritten(existingUser).then(function (resp) {
+                        $log.debug('Successfully cleared active user with response:', resp);
+                        deferred.resolve(resp);
+                    }, function (err) {
+                        $log.debug('Failed to clear active user:', err);
+                        deferred.reject(err);
+                    });
+                }
+                else {
+                    deferred.resolve();
+                }
+            }, function (err) {
+                $log.error('Error clearing active user:', err);
+                deferred.reject(err);
             });
+            return deferred.promise;
+        }
+
+        function _setActiveUser(user) {
+            user.type = 'user';
+            user.active = true;
+            var deferred = $q.defer();
+            lazyPouchDB.promise.then(function (pouch) {
+                pouch.put(user, user.id).then(function (resp) {
+                    $log.debug('set active user successfully with resp:', resp);
+                    user._rev = resp.rev;
+                    deferred.resolve(resp);
+                }, function (err) {
+                    $log.error('Error creating active user:', err);
+                    deferred.reject(err);
+                });
+            }, deferred.reject);
+            return deferred.promise;
+        }
+
+        function setActiveUser(user) {
+            var deferred = $q.defer();
+            clearActiveUser().then(function () {
+                _setActiveUser(user).then(
+                    deferred.resolve, deferred.reject
+                );
+            }, deferred.reject);
+            return deferred.promise;
         }
 
         return {
             getUser: getUser,
-            getTasks: getTasks
+            getTasks: getTasks,
+            clearActiveUser: clearActiveUser,
+            setActiveUser: setActiveUser
         };
     })
 

@@ -88,28 +88,109 @@ describe('data.LazyPouchDB', function () {
         });
     }));
 
-    it('should return a user object', inject(function (AsanaDataAccessLocal, lazyPouchDB) {
-        var instance = null;
-        var err = null;
-        reset(lazyPouchDB);
-        runs(function () {
-            AsanaDataAccessLocal.getUser().then(function (user) {
-                instance = user;
-            }, function (e) {
-                err = e;
+    describe('User', function () {
+        var instance;
+        var err;
+
+        // Here we just want to get the PouchDB back to it's initial state before each test is run.
+        beforeEach(inject(function (lazyPouchDB) {
+            instance = undefined;
+            err = undefined;
+            reset(lazyPouchDB);
+        }));
+
+        /**
+         * Calls the getUser method of the local Asana service and populates instance and err
+         * depending on what happens.
+         */
+        function getUser() {
+            inject(function (AsanaDataAccessLocal) {
+                runs(function () {
+                    AsanaDataAccessLocal.getUser().then(function (user) {
+                        instance = user;
+                    }, function (e) {
+                        err = e;
+                    });
+                });
+                waitsFor(function () {
+                    // Promises only complete on angular $digests.
+                    $rootScope.$apply();
+                    return (instance || instance === null) || err;
+                }, 'the PouchDB instance promise to return a user', 1000);
+            });
+        }
+
+        /**
+         * Create a fake user object and place it into our PouchDB instance. Waits for it to finish via
+         * promise.
+         */
+        function injectUser(name, id) {
+            name = name || 'Michael Ford';
+            id = id || 'fakeid';
+            var done;
+            var err;
+            inject(function (AsanaDataAccessLocal) {
+                runs(function () {
+                    AsanaDataAccessLocal.setActiveUser({
+                        name: name,
+                        id: id
+                    }).then(function () {
+                        done = true;
+                    }, function (_err) {
+                        done = true;
+                        err = _err;
+                    });
+                });
+                waitsFor(function () {
+                    $rootScope.$apply();
+                    return (done || err);
+                }, 'injection of mock user to succeed', 1000);
+                runs(function () {
+                    expect(err).toBeFalsy();
+                    expect(done).toBeTruthy();
+                });
+            });
+        }
+
+        it('should return null if no user', inject(function () {
+            getUser();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(instance).toBeNull();
+            });
+        }));
+
+        it('should return a user if one exists', function () {
+            injectUser();
+            getUser();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(instance).toBeTruthy();
             });
         });
-        waitsFor(function () {
-            // Promises only complete on angular $digests.
-            $rootScope.$apply();
-            return instance || err;
-        }, 'the PouchDB instance promise to return a user', 1000);
-        runs(function () {
-            expect(err).toBeFalsy();
-            expect(instance).toBeTruthy();
-        });
-    }));
 
+        it('should update existing user', function () {
+            injectUser();
+            getUser();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(instance).toBeTruthy();
+            });
+            injectUser('blah', 'blah');
+            runs(function () {
+                err = undefined;
+                instance = undefined;
+            });
+            getUser();
+            runs(function () {
+                console.log('instance is', instance);
+                expect(err).toBeFalsy();
+                expect(instance.name).toEqual('blah');
+                expect(instance.id).toEqual('blah');
+            });
+        });
+
+    });
 
 });
 
