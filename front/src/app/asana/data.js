@@ -301,7 +301,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
          */
         function installIndex(name, map) {
             var views = {};
-            views[name] = {map:map.toString()};
+            views[name] = {map: map.toString()};
             return __installIndex({
                 _id: '_design/' + name,
                 views: views
@@ -466,9 +466,12 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
          * @returns promise
          */
         function retryUntilWritten(doc) {
+            $log.debug('retryUntilWritten:', doc);
             var deferred = $q.defer();
             lazyPouchDB.promise.then(function (db) {
-                db.get(doc._id).then(function (origDoc) {
+                var id = doc._id;
+                db.get(id).then(function (origDoc) {
+                    $log.debug('doc with id ' + id + ' already exists so attempting update');
                     doc._rev = origDoc._rev;
                     return db.put(doc, doc._id).then(deferred.resolve, deferred.reject);
                 }, function (err) {
@@ -476,7 +479,20 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                     if (err.status === HTTP_CONFLICT) {
                         return retryUntilWritten(doc);
                     } else { // new doc
-                        return db.put(doc, doc._id).then(deferred.resolve, deferred.reject);
+                        $log.debug('doc with id ' + id + ' does not exist so adding new doc');
+                        if (doc._rev) {
+                            delete doc._rev;
+                        }
+                        if (doc.rev) {
+                            delete doc.rev;
+                        }
+                        return db.put(doc, doc._id).then(function (resp) {
+                            $log.debug('successfully created new doc:', resp);
+                            deferred.resolve(resp);
+                        }, function (err) {
+                            $log.error('error creating new doc:', err);
+                            deferred.reject(err);
+                        });
                     }
                 });
             }, deferred.reject);
@@ -537,24 +553,68 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
         }
 
         function addTask(task) {
+            var deferred = $q.defer();
             task.type = 'task';
             if (!task._id) {
+                $log.debug('Task has no _id so attempting to derive it.');
                 task._id = task.id;
             }
-            return retryUntilWritten(doc);
+            if (task._id) {
+                $log.debug('Task has id so attempting write', task._id);
+                retryUntilWritten(task).then(function (resp) {
+                    $log.debug('Successfully added task to PouchDB:', resp);
+                    deferred.resolve(resp);
+                }, function (err) {
+                    $log.debug('Unable to add task to PouchDB:', err);
+                    deferred.reject(err);
+                });
+            }
+            else {
+                var e = 'Task must have _id or id field';
+                $log.error(e);
+                deferred.reject(e);
+            }
+            return deferred;
         }
 
-        function removeTask(taskId) {
-
+        function removeTask(task) {
+            var deferred = $q.defer();
+            lazyPouchDB.promise.then(function (pouch) {
+                pouch.remove(task, function (resp) {
+                    $log.debug('Removed task successfully:', resp);
+                    deferred.resolve(resp);
+                }, function (err) {
+                    $log.error('Error removing task:', err);
+                    deferred.reject(err);
+                });
+            }, function (err) {
+                $log.error('Error removing task:', err);
+                deferred.reject(err);
+            });
+            return deferred;
         }
 
+        /**
+         * Delete all Asana tasks
+         * @returns promise
+         */
         function clearTasks() {
             var deferred = $q.defer();
             this.getTasks().then(function (tasks) {
                 var numDeleted = 0;
-                for (var i=0;i<tasks.length;i++) {
+                var onSuccess = function () {
+                    numDeleted++;
+                    if (numDeleted == tasks.length) {
+                        deferred.resolve();
+                    }
+                };
+                var onFail = function (err) {
+                    $log.error('Error clearing tasks:', err);
+                    deferred.reject(err);
+                };
+                for (var i = 0; i < tasks.length; i++) {
                     var task = tasks[i];
-                    db.remove(task);
+                    removeTask(task).then(onSuccess, onFail);
                 }
             }, function (err) {
                 $log.error('Error clearing tasks:', err);
@@ -575,7 +635,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             var onFail = function (err) {
                 deferred.reject(err);
             };
-            for (var i=0;i<tasks.length;i++) {
+            for (var i = 0; i < tasks.length; i++) {
                 var task = tasks[i];
                 addTask(task).then(onSuccess, onFail);
             }
