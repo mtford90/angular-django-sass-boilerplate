@@ -233,15 +233,21 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                 workspace: workspaceId,
                 completed_since: 'now'
             };
-            var asanaErrorHandler = _.partial(HandleError.asana, deferred);
             AsanaRestangular.all('tasks').getList(queryParams).then(function success(tasks) {
                 if (tasks.length) {
-                    processTasks(tasks).then(deferred.resolve, asanaErrorHandler);
+                    $log.debug('Got tasks and now going to process them:', tasks);
+                    processTasks(tasks).then(function (processedTasks) {
+                        $log.debug('Successfully got tasks:', processedTasks);
+                        deferred.resolve(processedTasks);
+                    }, function (err) {
+                        $log.debug('Error processing tasks:', err);
+                        deferred.reject(err);
+                    });
                 }
                 else {
                     deferred.resolve([]);
                 }
-            }, asanaErrorHandler);
+            }, deferred.reject);
             return deferred.promise;
         }
 
@@ -438,9 +444,11 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
          * @returns {Array}
          */
         function processRows(rows) {
+            $log.debug('processRows:', rows);
             var processedRows = [];
             for (var i = 0; i < rows.length; i++) {
-                var row = processedRows[i];
+                var row = rows[i];
+                $log.debug('Processing row:', row);
                 processedRows.push(row.value);
             }
             return processedRows;
@@ -451,7 +459,9 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             lazyPouchDB.promise.then(function (pouch) {
                 pouch.query('asana_tasks_index').then(function (res) {
                     $log.debug('asana_tasks_index:', res);
-                    deferred.resolve(processRows(res.rows));
+                    var processed = processRows(res.rows);
+                    $log.debug('processed tasks:', processed);
+                    deferred.resolve(processed);
                 });
             }, deferred.reject);
             return deferred.promise;
@@ -561,26 +571,30 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             }
             if (task._id) {
                 $log.debug('Task has id so attempting write', task._id);
-                retryUntilWritten(task).then(function (resp) {
-                    $log.debug('Successfully added task to PouchDB:', resp);
-                    deferred.resolve(resp);
-                }, function (err) {
-                    $log.debug('Unable to add task to PouchDB:', err);
-                    deferred.reject(err);
-                });
+                lazyPouchDB.promise.then(function (pouch) {
+                    $log.debug('Adding task:', task);
+                    pouch.put(task).then(function (resp) {
+                        $log.debug('Successfully added task to PouchDB:', resp);
+                        deferred.resolve(resp);
+                    }, function (err) {
+                        $log.debug('Unable to add task to PouchDB:', err);
+                        deferred.reject(err);
+                    });
+                }, deferred.reject);
             }
             else {
                 var e = 'Task must have _id or id field';
                 $log.error(e);
                 deferred.reject(e);
             }
-            return deferred;
+            return deferred.promise;
         }
 
         function removeTask(task) {
             var deferred = $q.defer();
             lazyPouchDB.promise.then(function (pouch) {
-                pouch.remove(task, function (resp) {
+                $log.debug('Removing task', task);
+                pouch.remove(task._id, task._rev, function (resp) {
                     $log.debug('Removed task successfully:', resp);
                     deferred.resolve(resp);
                 }, function (err) {
@@ -591,7 +605,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                 $log.error('Error removing task:', err);
                 deferred.reject(err);
             });
-            return deferred;
+            return deferred.promise;
         }
 
         /**
@@ -604,6 +618,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                 var numDeleted = 0;
                 var onSuccess = function () {
                     numDeleted++;
+                    $log.debug('numDeleted('+numDeleted+') == tasks.length(' + tasks.length + ')');
                     if (numDeleted == tasks.length) {
                         deferred.resolve();
                     }
@@ -620,7 +635,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                 $log.error('Error clearing tasks:', err);
                 deferred.reject(err);
             });
-            return deferred;
+            return deferred.promise;
         }
 
         function addTasks(tasks) {
@@ -639,7 +654,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                 var task = tasks[i];
                 addTask(task).then(onSuccess, onFail);
             }
-            return deferred;
+            return deferred.promise;
         }
 
         return {

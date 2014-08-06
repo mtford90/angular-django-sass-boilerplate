@@ -220,6 +220,77 @@ describe('data.LazyPouchDB', function () {
             });
         }
 
+        function addTask(id, name) {
+            inject(function (AsanaDataAccessLocal) {
+                var added = false;
+                var err;
+                runs(function () {
+                    AsanaDataAccessLocal.addTask({
+                        id: id,
+                        name: name,
+                        source: 'asana'
+                    }).then(function () {
+                        added = true;
+                    }, function (_err) {
+                        err = _err;
+                    });
+                });
+                waitsFor(function () {
+                    $rootScope.$apply();
+                    return (added || err);
+                }, 'the PouchDB promise to add the task', 1000);
+                runs(function () {
+
+                    expect(added).toBeTruthy();
+                    expect(err).toBeFalsy();
+                });
+            });
+        }
+
+        function removeTask(task) {
+            inject(function (AsanaDataAccessLocal) {
+                var removed = false;
+                var err;
+                runs(function () {
+                    AsanaDataAccessLocal.removeTask(task).then(function () {
+                        removed = true;
+                    }, function (_err) {
+                        err = _err;
+                    });
+                });
+                waitsFor(function () {
+                    $rootScope.$apply();
+                    return (removed || err);
+                }, 'the PouchDB promise to remove the task', 1000);
+                runs(function () {
+                    expect(removed).toBeTruthy();
+                    expect(err).toBeFalsy();
+                });
+            });
+        }
+
+        function clearTasks() {
+            inject(function (AsanaDataAccessLocal) {
+                var cleared = false;
+                var err;
+                runs(function () {
+                    AsanaDataAccessLocal.clearTasks().then(function () {
+                        cleared = true;
+                    }, function (_err) {
+                        err = _err;
+                    });
+                });
+                waitsFor(function () {
+                    $rootScope.$apply();
+                    return (cleared || err);
+                }, 'the PouchDB promise to clear tasks', 1000);
+                runs(function () {
+                    expect(cleared).toBeTruthy();
+                    expect(err).toBeFalsy();
+                });
+            });
+        }
+
         it('should return [] if no tasks', inject(function () {
             getTasks();
             runs(function () {
@@ -228,42 +299,85 @@ describe('data.LazyPouchDB', function () {
             });
         }));
 
-        it('should return the task if added one task', inject(function (AsanaDataAccessLocal) {
-            var added = false;
-            var err;
-            runs(function () {
-                AsanaDataAccessLocal.addTask({
-                    id: '5',
-                    name: 'a task',
-                    source: 'asana'
-                }).then(function () {
-                    added = true;
-                }, function (_err) {
-                    err = _err;
-                });
-            });
-            waitsFor(function () {
-                $rootScope.$apply();
-                return (added || err);
-            }, 'the PouchDB promise to add the task', 1000);
-            runs(function () {
-                expect(added).toBeTruthy();
-                expect(err).toBeFalsy();
-            });
 
+        it('should return the task if added one task', inject(function () {
+            runs(function () {
+                addTask('5', 'a task');
+            });
+            getTasks();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(tasks.length).toEqual(1);
+                expect(tasks[0].name).toEqual('a task');
+                expect(tasks[0].id).toEqual('5');
+                expect(tasks[0]._id).toEqual('5');
+                expect(tasks[0].type).toEqual('task');
+            });
         }));
 
-//        it('should return the task if added multiple tasks', inject(function () {
-//            expect(false).toBeTruthy();
-//        }));
-//
-//        it('should return all tasks minus the removed task when removed (object)', inject(function () {
-//            expect(false).toBeTruthy();
-//        }));
-//
-//        it('should return no tasks if cleared', inject(function () {
-//            expect(false).toBeTruthy();
-//        }));
+        it('should return the task if added multiple tasks', inject(function () {
+            runs(function () {
+                addTask('5', 'a task');
+                addTask('6', 'a second task');
+                addTask('7', 'a third task');
+            });
+            getTasks();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(tasks.length).toEqual(3);
+                var idents = _.pluck(tasks, 'id');
+                expect(idents).toContain('5');
+                expect(idents).toContain('6');
+                expect(idents).toContain('7');
+            });
+        }));
+
+        it('should return all tasks minus the removed task when removed (object)', inject(function () {
+            runs(function () {
+                addTask('5', 'a task');
+                addTask('6', 'a second task');
+                addTask('7', 'a third task');
+            });
+            getTasks();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(tasks.length).toEqual(3);
+                var taskToRemove = tasks[0];
+                tasks = undefined;
+                err = undefined;
+                removeTask(taskToRemove);
+            });
+            getTasks();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(tasks.length).toEqual(2);
+                var idents = _.pluck(tasks, 'id');
+                expect(idents).toContain('6');
+                expect(idents).toContain('7');
+            });
+        }));
+
+
+        it('should return no tasks if cleared', inject(function () {
+            runs(function () {
+                addTask('5', 'a task');
+                addTask('6', 'a second task');
+                addTask('7', 'a third task');
+            });
+            getTasks();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(tasks.length).toEqual(3);
+                tasks = undefined;
+                err = undefined;
+                clearTasks();
+            });
+            getTasks();
+            runs(function () {
+                expect(err).toBeFalsy();
+                expect(tasks.length).toEqual(0);
+            });
+        }));
 
     });
 
