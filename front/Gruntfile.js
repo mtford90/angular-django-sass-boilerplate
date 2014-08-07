@@ -336,6 +336,9 @@ module.exports = function (grunt) {
             },
             continuous: {
                 singleRun: true
+            },
+            dev: {
+                port: 9019
             }
         },
 
@@ -527,11 +530,13 @@ module.exports = function (grunt) {
                 files: [
                     '<%= app_files.jsunit %>'
                 ],
-                tasks: [ 'jshint:test', 'karma:unit:run' ],
+//                tasks: [ 'jshint:test', 'karma:unit:run' ],
+                tasks: [ 'karma:unit:run' ],
                 options: {
                     livereload: false
                 }
             }
+
 
         },
 
@@ -561,6 +566,7 @@ module.exports = function (grunt) {
     grunt.renameTask('watch', 'delta');
     grunt.registerTask('watch', [ 'build', 'karma:unit', 'delta' ]);
 
+
     /**
      * The default task is to build and compile.
      */
@@ -573,7 +579,6 @@ module.exports = function (grunt) {
         'clean',
         'browserify',
         'html2js',
-        'jshint',
         'compass:build',
         'copy:build_app_assets',
         'copy:build_vendor_assets',
@@ -584,6 +589,22 @@ module.exports = function (grunt) {
         'karmaconfig',
         'karma:continuous'
     ]);
+
+    grunt.registerTask('build-no-test', [
+        'clean',
+        'browserify',
+        'html2js',
+        'compass:build',
+        'copy:build_app_assets',
+        'copy:build_vendor_assets',
+        'copy:build_appjs',
+        'copy:build_vendorjs',
+        'copy:build_vendorcss',
+        'index:build',
+        'karmaconfig'
+    ]);
+
+
 
     /**
      * The `compile` task gets your app ready for deployment by concatenating and
@@ -596,6 +617,7 @@ module.exports = function (grunt) {
         'copy:compile_assets',
         'ngmin',
         'concat:compile_js',
+        'jshint',
         'uglify',
         'index:compile',
         'htmlmin'

@@ -1,4 +1,4 @@
-angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
+angular.module('app.asana.data', ['app.asana.restangular', 'restangular', 'pouch'])
 
 /**
  * Error handlers for the services with which we interact when pulling data from Asana
@@ -162,6 +162,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
     .factory('AsanaDataAccess', function ($q, $log, HandleError, Validate, DeRectangularize, AsanaRestangular) {
 
         function getUser() {
+            $log.debug('getUser');
             var deferred = $q.defer();
             AsanaRestangular.one('users', 'me').get().then(function success(user) {
                 var err = Validate.User(user);
@@ -170,7 +171,10 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                 }
                 var processedUser = DeRectangularize.User(user);
                 deferred.resolve(processedUser);
-            }, _.partial(HandleError.asana, deferred));
+            }, function (err) {
+                $log.error('Error getting user:',err);
+                deferred.reject(err);
+            });
             return deferred.promise;
         }
 
@@ -257,159 +261,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
         };
     })
 
-    // A service that defers the return of the pouchdb instance so that it has time to
-    // initialise/load..
-    .factory('lazyPouchDB', function ($q, $log) {
-        var pouch = null;
-        var deferred = $q.defer();
 
-        /**
-         * Takes a couchdb design doc and inserts this into the database.
-         * @param index
-         * @param name
-         * @returns promise
-         * @private
-         */
-        function __installIndex(index, name) {
-            $log.debug('installing index:', index, name);
-            var deferred = $q.defer();
-            pouch.put(index).then(function () {
-                // Kick off initial update.
-                $log.debug('Kicking off initial update for index ' + name);
-                pouch.query(name, {stale: 'update_after'}).then(function (resp) {
-                    $log.debug('successfully executed initial update for index ' + name + ':', resp);
-                    deferred.resolve(resp);
-                }, function (err) {
-                    $log.error('error executing initial update for index ' + name + ':', err);
-                    deferred.reject(err);
-                });
-            }, function (err) {
-                $log.error('error installing index ' + name, err);
-                if (err.status == 409) { // Already exists.
-                    $log.debug('index ' + name + ' already exists, therefore ignoring');
-                    deferred.resolve();
-                }
-                else {
-                    deferred.reject(err);
-                }
-            });
-            return deferred.promise;
-        }
-
-        /**
-         * Given a name and a map function, creates a pouchdb 'index'
-         * An index is essentially a couchdb design document with a single view.
-         * See http://pouchdb.com/2014/05/01/secondary-indexes-have-landed-in-pouchdb.html for more explanations on this
-         * and why they're useful.
-         * @param name the name of the index
-         * @param map a couchdb/puchdb map function
-         * @returns promise a promise to install the new index
-         */
-        function installIndex(name, map) {
-            var views = {};
-            views[name] = {map: map.toString()};
-            return __installIndex({
-                _id: '_design/' + name,
-                views: views
-            }, name);
-        }
-
-        function installActiveUserIndex() {
-            return installIndex('active_user_index',
-                function map(doc) {
-                    if (doc.type == 'user' && doc.active) {
-                        emit(doc._id, doc);
-                    }
-                }
-            );
-        }
-
-        function installAsanaTasksIndex() {
-            return installIndex('asana_tasks_index',
-                function map(doc) {
-                    if (doc.type == 'task' && doc.source == 'asana') {
-                        emit(doc._id, doc);
-                    }
-                }
-            );
-        }
-
-        function initialisePouchDB() {
-            // TODO: Setup design documents.
-            $log.debug('Initialising PouchDB');
-            installActiveUserIndex().then(function () {
-                installAsanaTasksIndex().then(function () {
-                    deferred.resolve(pouch);
-                }, deferred.reject);
-
-            }, deferred.reject);
-        }
-
-        function configurePouchDB() {
-            $log.debug('Configuring PouchDB');
-            pouch = new PouchDB('db');
-            var map = function (doc) {
-                emit(doc);
-            };
-            pouch.query(map, '_count', function (err, response) {
-                if (err) {
-                    deferred.reject(err);
-                }
-                else {
-                    if (!response.total_rows) {
-                        initialisePouchDB(deferred);
-                    }
-                    else {
-                        deferred.resolve(pouch);
-                    }
-                }
-            });
-        }
-
-        configurePouchDB();
-
-        return {
-            promise: deferred.promise,
-            /**
-             * Inject pouchdb instance manually. Useful for testing.
-             * @param _pouch a pouchdb instance
-             */
-            inject: function (_pouch) {
-                pouch = _pouch;
-            },
-            /**
-             * Destroy the existing pouchdb instance and start from scratch.
-             * @returns promise
-             */
-            reset: function () {
-                var resetDeferred = $q.defer();
-                var reset = function () {
-                    if (pouch) {
-                        var dbInstance = pouch;
-                        pouch = null;
-                        deferred = $q.defer();
-                        dbInstance.destroy(function (err) {
-                            if (err) {
-                                $log.error('Unable to destroy database:', err);
-                                resetDeferred.reject(err);
-                            }
-                            else {
-                                $log.debug('Successfully destroyed database');
-                                configurePouchDB();
-                                // Reset succeeds/fails if configuration succeeds/fails.
-                                deferred.promise.then(resetDeferred.resolve, resetDeferred.reject);
-                            }
-                        });
-                    }
-                };
-                // Ensure initialising has completed (successfully or otherwise) before we allow
-                // a reset to take place.
-                this.promise.then(reset, reset);
-                return resetDeferred.promise;
-            }
-        };
-
-    })
 
     // A set of stored procedures, mirroring AsanaDataAccess but hitting the local PouchDB instance
     // instead.
@@ -417,7 +269,10 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
 
         function getUser() {
             var deferred = $q.defer();
-            lazyPouchDB.promise.then(function (pouch) {
+            var promise = lazyPouchDB.getPromise();
+            $log.debug('getUser');
+            promise.then(function (pouch) {
+                $log.debug('querying for active user');
                 pouch.query('active_user_index').then(function (res) {
                     $log.debug('active_user_index:', res);
                     if (res.rows.length > 1) {
@@ -456,7 +311,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
 
         function getTasks() {
             var deferred = $q.defer();
-            lazyPouchDB.promise.then(function (pouch) {
+            lazyPouchDB.getPromise().then(function (pouch) {
                 pouch.query('asana_tasks_index').then(function (res) {
                     $log.debug('asana_tasks_index:', res);
                     var processed = processRows(res.rows);
@@ -478,7 +333,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
         function retryUntilWritten(doc) {
             $log.debug('retryUntilWritten:', doc);
             var deferred = $q.defer();
-            lazyPouchDB.promise.then(function (db) {
+            lazyPouchDB.getPromise().then(function (db) {
                 var id = doc._id;
                 db.get(id).then(function (origDoc) {
                     $log.debug('doc with id ' + id + ' already exists so attempting update');
@@ -487,16 +342,17 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                 }, function (err) {
                     var HTTP_CONFLICT = 409;
                     if (err.status === HTTP_CONFLICT) {
+                        $log.debug('conflict, retrying');
                         return retryUntilWritten(doc);
                     } else { // new doc
                         $log.debug('doc with id ' + id + ' does not exist so adding new doc');
-                        if (doc._rev) {
-                            delete doc._rev;
+                        // Avoid https://github.com/pouchdb/pouchdb/issues/2570 by only passing id param
+                        // if one doesn't exist in the object itself.
+                        var f = _.bind(db.put, db, doc);
+                        if (!doc._id) {
+                            f = _.bind(f, db, doc.id);
                         }
-                        if (doc.rev) {
-                            delete doc.rev;
-                        }
-                        return db.put(doc, doc._id).then(function (resp) {
+                        return f().then(function (resp) {
                             $log.debug('successfully created new doc:', resp);
                             deferred.resolve(resp);
                         }, function (err) {
@@ -510,9 +366,11 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
         }
 
         function clearActiveUser() {
+            $log.debug('clearing active user');
             var deferred = $q.defer();
             getUser().then(function (existingUser) {
                 if (existingUser) {
+                    $log.debug('theres an existing user, so clearing');
                     existingUser.active = false;
                     if (!existingUser._id) {
                         existingUser._id = existingUser.id;
@@ -522,7 +380,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
                         deferred.resolve(resp);
                     }, function (err) {
                         $log.debug('Failed to clear active user:', err);
-                        deferred.reject(err);
+                        deferred.reject(err); 
                     });
                 }
                 else {
@@ -538,21 +396,14 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
         function _setActiveUser(user) {
             user.type = 'user';
             user.active = true;
-            var deferred = $q.defer();
-            lazyPouchDB.promise.then(function (pouch) {
-                pouch.put(user, user.id).then(function (resp) {
-                    $log.debug('set active user successfully with resp:', resp);
-                    user._rev = resp.rev;
-                    deferred.resolve(resp);
-                }, function (err) {
-                    $log.error('Error creating active user:', err);
-                    deferred.reject(err);
-                });
-            }, deferred.reject);
-            return deferred.promise;
+            if (!user._id) {
+                user._id = user.id;
+            }
+            return retryUntilWritten(user);
         }
 
         function setActiveUser(user) {
+            $log.debug('setting active user:', user);
             var deferred = $q.defer();
             clearActiveUser().then(function () {
                 _setActiveUser(user).then(
@@ -571,7 +422,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
             }
             if (task._id) {
                 $log.debug('Task has id so attempting write', task._id);
-                lazyPouchDB.promise.then(function (pouch) {
+                lazyPouchDB.getPromise().then(function (pouch) {
                     $log.debug('Adding task:', task);
                     pouch.put(task).then(function (resp) {
                         $log.debug('Successfully added task to PouchDB:', resp);
@@ -592,7 +443,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular'])
 
         function removeTask(task) {
             var deferred = $q.defer();
-            lazyPouchDB.promise.then(function (pouch) {
+            lazyPouchDB.getPromise().then(function (pouch) {
                 $log.debug('Removing task', task);
                 pouch.remove(task._id, task._rev, function (resp) {
                     $log.debug('Removed task successfully:', resp);

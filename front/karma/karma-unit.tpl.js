@@ -9,7 +9,9 @@ module.exports = function ( karma ) {
      * This is the list of file patterns to load into the browser during testing.
      */
     files: [
-      'node_modules/es5-shim/es5-shim.min.js',
+      'node_modules/es5-shim/es5-shim.min.js', // Otherwise PouchDB doesn't work.
+      'node_modules/q/q.js', // For mocking $q
+      'karma/test-global.js',
       <% scripts.forEach( function ( file ) { %>'<%= file %>',
       <% }); %>
       'src/**/*.js'
@@ -18,9 +20,11 @@ module.exports = function ( karma ) {
       'src/assets/**/*.js'
 
     ],
-    frameworks: [ 'jasmine' ],
-    plugins: [ 'karma-jasmine',
+    frameworks: [ 'mocha', 'chai' ],
+    plugins: [ 'karma-mocha',
+               'karma-chai',
                'karma-phantomjs-launcher',
+               'karma-chrome-launcher'
                ],
 
     /**
@@ -56,11 +60,10 @@ module.exports = function ( karma ) {
      */
     browsers: [
       'PhantomJS'
-    ],
+//      'Chrome'
+//      'Firefox'
+    ]
 
-    proxies: {
-        '/': 'http://localhost:9001/apiv2'
-    }
   });
 };
 
