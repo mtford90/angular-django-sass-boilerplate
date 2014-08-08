@@ -1,4 +1,35 @@
 
+describe('expected pouch behaviour', function () {
+
+    it('test delete', function (done) {
+        var pouch = new PouchDB('sdfsdf');
+        pouch.post({blah: 1}, function (err, resp) {
+            if (err) done(new Error(err));
+            pouch.get(resp.id, function (err, doc) {
+                if (err) done(new Error(err));
+                pouch.remove(doc._id, doc._rev, function (err) {
+                    dump(PouchDB.version);
+                    done(err ? new Error(err) : undefined);
+                });
+            });
+        });
+    });
+
+    it('test delete with doc pattern', function (done) {
+        var pouch = new PouchDB('sdfsdf');
+        pouch.post({blah: 1}, function (err, resp) {
+            if (err) done(new Error(err));
+            pouch.get(resp.id, function (err, doc) {
+                if (err) done(new Error(err));
+                pouch.remove(doc, function (err) {
+                    dump(PouchDB.version);
+                    done(err ? new Error(err) : undefined);
+                });
+            });
+        });
+    });
+});
+
 describe('pouch', function () {
 
     var $rootScope, $q, lazyPouchDB;
@@ -15,6 +46,7 @@ describe('pouch', function () {
         });
     });
 
+
     it('should return a pouch instance', function (done) {
         var promise = lazyPouchDB.getPromise();
         promise.then(function (pouch) {
@@ -25,24 +57,6 @@ describe('pouch', function () {
         });
     });
 
-    // TODO: Callback hell here...
-    it('should reset', function (done) {
-        lazyPouchDB.getPromise().then(function (pouch) {
-            pouch.post({blah: 5}).then(function (resp) {
-                console.log('post succeeded', resp);
-                pouch.query(function (doc) {
-                    if (!doc.deleted) {
-                        emit(doc._id, doc);
-                    }
-                }).then(function (rows) {
-                    console.log('got rows', rows);
-                    assert.ok(rows.total_rows);
-                    lazyPouchDB.reset().then(function () {
-                       done();
-                    }, mochaError(done));
-                }, mochaError(done));
-            }, mochaError(done));
-        });
-    });
 });
+
 

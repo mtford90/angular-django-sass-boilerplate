@@ -13,7 +13,8 @@
     "url": "~0.10.1",
     "jstream": "~0.2.7",
     "querystring": "~0.2.0",
-    "eventvat": "~0.2.1"
+    "eventvat": "~0.2.1",
+    "pouchdb": "~2.2.3"
   },
   "devDependencies": {
     "grunt": "~0.4.1",

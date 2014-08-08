@@ -17,8 +17,8 @@ module.exports = function ( karma ) {
       'src/**/*.js'
     ],
     exclude: [
-      'src/assets/**/*.js'
-
+      'src/assets/**/*.js',
+      'src/common/useful.js'
     ],
     frameworks: [ 'mocha', 'chai' ],
     plugins: [ 'karma-mocha',
@@ -59,8 +59,8 @@ module.exports = function ( karma ) {
      * the aesthetic advantage of not launching a browser every time you save.
      */
     browsers: [
-      'PhantomJS'
-//      'Chrome'
+//      'PhantomJS'
+      'Chrome'
 //      'Firefox'
     ]
 

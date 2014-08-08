@@ -33,16 +33,8 @@ angular.module('pouch', [])
         function __installIndex(index, name) {
             $log.debug('installing index:', index, name);
             var deferredInstallationOfIndex = $q.defer();
-            pouch.put(index).then(function () {
-                // Kick off initial update.
-                $log.debug('Kicking off initial update for index ' + name);
-                pouch.query(name, {stale: 'update_after'}).then(function (resp) {
-                    $log.debug('successfully executed initial update for index ' + name + ':', resp);
-                    deferredInstallationOfIndex.resolve(resp);
-                }, function (err) {
-                    $log.error('error executing initial update for index ' + name + ':', err);
-                    deferredInstallationOfIndex.reject(err);
-                });
+            pouch.put(index).then(function (resp) {
+                deferredInstallationOfIndex.resolve(resp);
             }, function (err) {
                 $log.error('error installing index ' + name, err);
                 if (err.status == 409) { // Already exists.
@@ -84,9 +76,12 @@ angular.module('pouch', [])
             pouch = new PouchDB('db');
             var indexesInstalled = 0;
             var errors = [];
-            var numIndexes = INDEXES.getSize();
-
-
+            var numIndexes = 0;
+            for (var key in INDEXES) {
+                if (INDEXES.hasOwnProperty(key)) {
+                    numIndexes++;
+                }
+            }
             /**
              * Checks to see if all indexes have been installed (or otherwise)
              */
@@ -131,62 +126,13 @@ angular.module('pouch', [])
                 }
                 return null;
             },
-            /**
-             * Inject pouchdb instance manually. Useful for testing.
-             * @param _pouch a pouchdb instance
-             */
-            inject: function (_pouch) {
-                pouch = _pouch;
-            },
-            /**
-             * Destroy the existing pouchdb instance and start from scratch.
-             * Note this is pretty inefficient as it walks through each doc and deletes it, hence iterating
-             * over every single row.
-             * Prob only useful in testing.
-             *
-             * Previous implementation simply destroyed the entire databse but there were issues with indexedb.
-             *  - https://github.com/pouchdb/pouchdb/issues/1291
-             *
-             *  TODO: Randomly name the database and store that name in local storage? This way can use destroy as will be an entirely new db.
-             * @returns promise
-             */
             reset: function () {
-                $log.debug('Resetting pouchdb');
-                var oldDeferred = deferred;
-                deferred = $q.defer();
-                oldDeferred.promise.then(function (dbInstance) {
-                    dbInstance.query(function (doc) {
-                        if (!doc._deleted) {
-                            emit(doc._id, doc);
-                        }
-                    }).then(function (resp) {
-                        var docs = resp.rows;
-
-                        $log.debug('there are ' + docs.length + ' documents to delete for reset');
-
-                        docs = _.pluck(docs, 'value');
-
-                        $log.debug('deleting docs:', docs);
-
-                        _.map(docs, function (doc) {
-                            doc._deleted = true;
-                        });
-
-                        dbInstance.bulkDocs(docs, function (err, response) {
-                           if (err) {
-                               deferred.reject(err);
-                           }
-                            else { 
-                               deferred.resolve(docs.length);
-                               dbInstance.compact();
-                           }
-                        });
-                    }, function (err) {
-                        $log.error('error querying for docs when resetting:', err);
-                        deferred.reject(err);
-                    });
+                var resetDeferred = $q.defer();
+                deferred.promise.then(function (dbInstance) {
+                   $log.debug('Resetting pouchdb');
+                   dbInstance.
                 }, deferred.reject);
-                return deferred.promise;
+                return resetDeferred.promise;
             }
         };
 

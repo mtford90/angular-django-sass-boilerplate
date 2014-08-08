@@ -313,10 +313,12 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular', 'pouch
             var deferred = $q.defer();
             lazyPouchDB.getPromise().then(function (pouch) {
                 pouch.query('asana_tasks_index').then(function (res) {
-                    $log.debug('asana_tasks_index:', res);
-                    var processed = processRows(res.rows);
-                    $log.debug('processed tasks:', processed);
-                    deferred.resolve(processed);
+                    pouch.query('asana_tasks_index').then(function (res) {
+                        $log.debug('asana_tasks_index:', res);
+                        var processed = processRows(res.rows);
+                        $log.debug('processed tasks:', processed);
+                        deferred.resolve(processed);
+                    });
                 });
             }, deferred.reject);
             return deferred.promise;
@@ -330,17 +332,46 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular', 'pouch
          * @param doc
          * @returns promise
          */
+
+//        function retryUntilWritten(doc) {
+//            var deferred = $q.defer();
+//            lazyPouchDB.getPromise().then(function (db) {
+//                db.get(doc._id).then(function (origDoc) {
+//                    doc._rev = origDoc._rev;
+//                    db.put(doc).then(deferred.resolve, deferred.reject);
+//                }).catch(function (err) {
+//                    if (err.status === 409) {
+//                        retryUntilWritten(doc).then(deferred.resolve, deferred.reject);
+//                    } else { // new doc
+//                        db.put(doc).then(deferred.resolve, deferred.reject);
+//                    }
+//                });
+//            });
+//            return deferred.promise;
+//        }
+
         function retryUntilWritten(doc) {
+            var HTTP_CONFLICT = 409;
             $log.debug('retryUntilWritten:', doc);
             var deferred = $q.defer();
             lazyPouchDB.getPromise().then(function (db) {
+                $log.debug('here we go');
                 var id = doc._id;
-                db.get(id).then(function (origDoc) {
+                if (!id) {
+                    doc._id = doc.id;
+                }
+                db.get(doc._id).then(function (origDoc) {
                     $log.debug('doc with id ' + id + ' already exists so attempting update');
                     doc._rev = origDoc._rev;
-                    return db.put(doc, doc._id).then(deferred.resolve, deferred.reject);
+                    return db.put(doc, doc._id, doc._rev).then(function (resp) {
+                        doc._id = resp.id;
+                        doc._rev = resp.rev;
+                        deferred.resolve(doc);
+                    }, function (err) {
+                        deferred.reject(err);
+                    });
                 }, function (err) {
-                    var HTTP_CONFLICT = 409;
+                    $log.debug(':(');
                     if (err.status === HTTP_CONFLICT) {
                         $log.debug('conflict, retrying');
                         return retryUntilWritten(doc);
@@ -416,6 +447,7 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular', 'pouch
         function addTask(task) {
             var deferred = $q.defer();
             task.type = 'task';
+            task.source = 'asana';
             if (!task._id) {
                 $log.debug('Task has no _id so attempting to derive it.');
                 task._id = task.id;
@@ -442,21 +474,8 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular', 'pouch
         }
 
         function removeTask(task) {
-            var deferred = $q.defer();
-            lazyPouchDB.getPromise().then(function (pouch) {
-                $log.debug('Removing task', task);
-                pouch.remove(task._id, task._rev, function (resp) {
-                    $log.debug('Removed task successfully:', resp);
-                    deferred.resolve(resp);
-                }, function (err) {
-                    $log.error('Error removing task:', err);
-                    deferred.reject(err);
-                });
-            }, function (err) {
-                $log.error('Error removing task:', err);
-                deferred.reject(err);
-            });
-            return deferred.promise;
+            task._deleted = true;
+            return retryUntilWritten(task);
         }
 
         /**

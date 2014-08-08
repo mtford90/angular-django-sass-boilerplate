@@ -67,6 +67,7 @@ module.exports = {
             'vendor/jquery/dist/jquery.js',
             'vendor/jquery-ui/jquery-ui.js',
             'vendor/underscore/underscore.js',
+            'vendor/async/lib/async.js',
             'vendor/angular/angular.js',
             'vendor/ng-file-upload/angular-file-upload.js',
             'vendor/angular-bootstrap/ui-bootstrap-tpls.min.js',
@@ -79,8 +80,7 @@ module.exports = {
             'vendor/modernizr/modernizr.js',
             'vendor/angular-local-storage/angular-local-storage.js',
             'vendor/angular-base64/angular-base64.js',
-            'vendor/restangular/src/restangular.js',
-
+            'vendor/restangular/src/restangular.js'
         ],
         css: [
             'vendor/bootstrap/dist/css/*.css*',
