@@ -1,13 +1,8 @@
 angular.module('app.asana.data', ['app.asana.restangular', 'restangular', 'pouch', 'LocalStorageModule'])
 
-
-
-
-
-
-/**
- * Mediates between local storage of Asana data and remote.
- */
+    /**
+     * Mediates between local storage of Asana data and remote.
+     */
     .factory('AsanaData', function (AsanaLocal, AsanaRemote, $q, $log) {
         return {
             getUser: function () {

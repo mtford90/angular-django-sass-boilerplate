@@ -1,5 +1,7 @@
 angular.module('app.asana.data')
 
+
+
     // A set of stored procedures, mirroring AsanaDataAccess but hitting the local PouchDB instance
     // instead.
     .factory('AsanaLocal', function ($q, $log, lazyPouchDB) {
