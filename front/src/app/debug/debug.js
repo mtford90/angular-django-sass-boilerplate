@@ -15,7 +15,7 @@ angular.module('app.debug', [
         });
     })
 
-    .controller('DebugCtrl', function DebugController($scope, $log, Database) {
+    .controller('DebugCtrl', function DebugController($scope, $log, lazyPouchDB) {
 
         $scope.error = null;
 
@@ -36,8 +36,9 @@ angular.module('app.debug', [
                     $scope.error = err;
                 }
             };
-
-            Database.instance.query(map, '_count', callback);
+            lazyPouchDB.getPromise().then(function (pouch) {
+                pouch.query(map, '_count', callback);
+            });
         })();
 
 

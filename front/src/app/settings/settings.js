@@ -23,72 +23,7 @@ angular.module('app.settings', [
         localStorageServiceProvider.setPrefix('pomodoro');
     }])
 
-    .constant('SETTING_CHANGED_EVENT', 'SETTING_CHANGED_EVENT')
-    .constant('SETTING_CHANGED_OLD_VALUE_KEY', 'SETTING_CHANGED_OLD_VALUE_KEY')
-    .constant('SETTING_CHANGED_NEW_VALUE_KEY', 'SETTING_CHANGED_NEW_VALUE_KEY')
-    .constant('SETTING_CHANGED_PROPERTY_KEY', 'SETTING_CHANGED_PROPERTY_KEY')
 
-/**
- * Manages saving of settings down to localstorage or cookies depending on the
- * browser. Also broadcasts any changes to settings so other areas of the app
- * can react.
- */
-    .factory('SettingsService', function ($log, localStorageService, $rootScope, SETTING_CHANGED_EVENT, SETTING_CHANGED_OLD_VALUE_KEY, SETTING_CHANGED_NEW_VALUE_KEY, SETTING_CHANGED_PROPERTY_KEY) {
-        /**
-         * Broadcast that a particular setting has been changed so that other
-         * areas of the app can react to this.
-         *
-         * @param key key that has changed
-         * @param oldValue the value before the change
-         * @param newValue the new value
-         */
-        function broadcast(key, oldValue, newValue) {
-            var payload = {
-                SETTING_CHANGED_OLD_VALUE_KEY: oldValue,
-                SETTING_CHANGED_NEW_VALUE_KEY: newValue,
-                SETTING_CHANGED_PROPERTY_KEY: key
-            };
-            var event = SETTING_CHANGED_EVENT;
-            $log.debug('broadcasting ' + event, payload);
-            $rootScope.$broadcast(event, payload);
-        }
-
-        var get = function (key, dflt) {
-            var v = localStorageService.get(key);
-            $log.debug(key + ' = ' + v);
-            if (v !== undefined && v !== null) {
-                return v;
-            }
-            return dflt;
-        };
-
-        var getBoolean = function (key, dflt) {
-            var v = get(key);
-            if (v !== undefined && v !== null) {
-                return v == 'true';
-            }
-            return dflt;
-        };
-
-        var set = function (key, value) {
-            var oldValue = get(key);
-            localStorageService.set(key, value);
-            broadcast(key, oldValue, value);
-        };
-
-        var setBoolean = function (key, value) {
-            var oldValue = getBoolean(key);
-            localStorageService.set(key, value ? 'true' : 'false');
-            broadcast(key, oldValue, value);
-        };
-
-        return {
-            get: get,
-            getBoolean: getBoolean,
-            set: set,
-            setBoolean: setBoolean
-        };
-    })
 
     .constant('SOURCES', {
         Trello: 'trello',
@@ -101,12 +36,12 @@ angular.module('app.settings', [
 /**
  * Manages Asana settings in $rootScope.
  */
-    .factory('AsanaSettings', function ($rootScope, SettingsService, ASANA_ERRORS, $log, SETTING_CHANGED_EVENT, ASANA_API_KEY, SETTING_CHANGED_PROPERTY_KEY, AsanaDataAccess) {
+    .factory('AsanaSettings', function ($rootScope, SettingsService, ASANA_ERRORS, $log, SETTING_CHANGED_EVENT, ASANA_API_KEY, SETTING_CHANGED_PROPERTY_KEY, AsanaData, $q) {
 
         /**
          * Setup Asana settings in $rootScope for the first time.
          */
-        function resetAsana() {
+        function resetAsanaScope() {
             $rootScope.asana = {
                 apiKey: '',
                 workspaces: [],
@@ -119,13 +54,26 @@ angular.module('app.settings', [
             };
         }
 
+        function refreshAsana() {
+            var deferred = $q.defer();
+            resetAsanaScope();
+            AsanaData.reset().then(function () {
+                configureAsanaOnAPIKeyChange().then(function () {
+                    deferred.resolve();
+                }, deferred.reject);
+            }, deferred.reject);
+            return deferred.promise;
+        }
+
         /**
          * Setup Asana settings in $rootScope by hitting the Asana API.
          */
         function configureAsanaOnAPIKeyChange() {
-            resetAsana();
+            $log.info('configuring ASANA');
+            var deferred = $q.defer();
+            resetAsanaScope();
             $rootScope.asana.isLoading = true;
-            AsanaDataAccess.getUser().then(function success(user) {
+            AsanaData.getUser().then(function success(user) {
                 $rootScope.asana.isLoading = false;
                 if (user) {
                     $log.info('Successfully got user:', user);
@@ -142,49 +90,26 @@ angular.module('app.settings', [
                     $rootScope.asana.workspaces = [];
                     $rootScope.asana.selectedWorkspace = null;
                 }
+                deferred.resolve();
             }, function failure(err) {
                 $rootScope.asana.isLoading = false;
-                $rootScope.asana.error = err;
+                deferred.reject(err);
             });
+            return deferred.promise;
         }
 
-        resetAsana();
+        resetAsanaScope();
         if ($rootScope.asana.apiKey) {
             configureAsanaOnAPIKeyChange();
         }
 
-        $rootScope.$watch('asana.selectedWorkspace', function (newValue, oldValue) {
-            if (newValue !== oldValue) {
-                if (newValue) {
-                    $log.debug('Selected workspace changed to "' + newValue.name + '" so fetching assigned tasks');
-                    $rootScope.asana.tasks = [];
-                    $rootScope.asana.isLoadingTasks = true;
-                    AsanaDataAccess.getTasks(newValue.id).then(function success(tasks) {
-                        $log.debug('got tasks:', tasks);
-                        $rootScope.asana.isLoadingTasks = false;
-                        $rootScope.asana.tasks = tasks;
-                    }, function fail(err) {
-                        $rootScope.asana.isLoadingTasks = false;
-                        $rootScope.asana.error = err;
-                    });
-                }
-            }
-        });
-
-        $rootScope.$on(SETTING_CHANGED_EVENT, function (event, data) {
-            var property = data[SETTING_CHANGED_PROPERTY_KEY];
-            if (property == ASANA_API_KEY) {
-                configureAsanaOnAPIKeyChange();
-            }
-        });
-
         return {
-            resetAsana: resetAsana(),
+            refreshAsana: refreshAsana,
             configureAsana: configureAsanaOnAPIKeyChange()
         };
     })
 
-    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, SettingsService, SOURCES, ASANA_API_KEY, ASANA_ERRORS, Database, $stateParams, $state, AsanaSettings) {
+    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, SOURCES, ASANA_API_KEY, ASANA_ERRORS, $stateParams, $state, AsanaSettings) {
 
         $scope.SOURCES = SOURCES; // So that we can access these from the templates.
 
@@ -292,20 +217,11 @@ angular.module('app.settings', [
             }
         }
 
+        $scope.refreshAsana = AsanaSettings.refreshAsana;
 
         $scope.useTask = function (task) {
-            $log.debug('put', task);
-            Database.instance.put({
-                name: task.name,
-                source: SOURCES.Asana,
-                type: 'task'
-            }, task.id).then(function () {
-                $scope.$apply(function () {
-                    $scope.tasks.active.push(task);
-                });
-            });
-        };
 
+        };
 
     })
 ;

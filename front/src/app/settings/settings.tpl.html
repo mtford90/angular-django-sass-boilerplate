@@ -64,6 +64,9 @@
                     </div>
                 </tab>
                 <tab heading="Asana" active="tabState.asana">
+                    <button class="btn btn-default" ng-click="refreshAsana()" ng-disabled="$root.asana.isLoading">
+                        Refresh
+                    </button>
                     <div class="setting">
                         <div class="settings-label">
                             <label for="asana-api-key">API key</label>
