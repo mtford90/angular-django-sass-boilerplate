@@ -10,7 +10,7 @@ angular.module('app.settings', [
 
     .config(function config($stateProvider) {
         $stateProvider.state('settings', {
-            url: '/settings?tab',
+            url: '/settings',
             views: {
                 "main": {
                     controller: 'SettingsCtrl',
@@ -102,32 +102,6 @@ angular.module('app.settings', [
     .controller('SettingsCtrl', function SettingsCtrl($scope, $log, SOURCES, ASANA_API_KEY, ASANA_ERRORS, $stateParams, $state, AsanaSettings, SettingsService) {
         $scope.SOURCES = SOURCES; // So that we can access these from the templates.
 
-        (function configureTab() {
-            $scope.tabState = {
-                pomodoro: $stateParams.tab == 'pomodoro',
-                tasks: $stateParams.tab == 'tasks',
-                asana: $stateParams.tab == 'asana'
-            };
-            var tabIsSelected = false;
-            var watcher = function (tab, selected) {
-                if (selected) {
-                    $state.transitionTo('settings', {tab: tab}, {reloadOnSearch: false});
-                }
-            };
-            for (var tabName in $scope.tabState) {
-                if ($scope.tabState.hasOwnProperty(tabName)) {
-                    if (!tabIsSelected) {
-                        tabIsSelected = $scope.tabState[tabName];
-                    }
-                    var boundWatcher = _.partial(watcher, tabName);
-                    var watchVar = 'tabState.' + tabName;
-                    $scope.$watch(watchVar, boundWatcher);
-                }
-            }
-            if (!tabIsSelected) {
-                $scope.tabState['pomodoro'] = true;
-            }
-        })();
 
         $scope.loading = true;
         $scope.settings = {

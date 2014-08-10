@@ -2,9 +2,12 @@ angular.module('app', [
     'templates-app',
     'templates-common',
     'app.home',
+    'app.about',
+    'app.support',
     'app.settings',
     'app.stats',
     'app.logging',
+    'app.tasks',
     'app.debug',
     'ui.router',
     'ui.bootstrap',
@@ -45,5 +48,14 @@ angular.module('app', [
 
         window.onresize = function () { $scope.$apply(); };
 
+    })
+
+    .directive('loading', function () {
+        return {
+            restrict: 'AE',
+            replace: 'false',
+            template: '<div class="loading"><div class="double-bounce1"></div><div class="double-bounce2"></div></div>'
+        }
     });
+
 

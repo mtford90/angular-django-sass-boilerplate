@@ -1,127 +1,179 @@
-<div id="settings" class="container">
-    <div class="row">
-        <div class="col-md-12" id="help">
-            {{helpText}}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="widget">
+            <div class="widget-title">
+                <i class="fa fa-tachometer"></i>Pomodoro
+            </div>
+            <div class="widget-body medium no-padding">
+                <p>
+                    Explanation of Pomodoro here.
+                </p>
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="rounds">Rounds</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="rounds" ng-model="settings.pomodoroRounds">
+                    </div>
+                </div>
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="goal">Goal</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="goal" ng-model="settings.pomodoroGoal">
+                    </div>
+                </div>
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="short-break">Short Break</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="short-break" ng-model="settings.pomodoroShortBreak">
+                    </div>
+                </div>
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="long-break">Long Break</label>
+                    </div>
+                    <div class="settings-value">
+                        <input id="long-break" ng-model="settings.pomodoroLongBreak">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>  <div class="col-lg-8">
+        <div class="widget">
+            <div class="widget-title">
+                <i class="fa fa-refresh"></i>Synchronisation
+            </div>
+            <div class="widget-body medium no-padding">
+                <p>
+                    All you need to synchronise across your devices is a CouchDB instance accesible from all
+                    those devices. You can get a free instance from either of these two services:
+
+                    <ul>
+                        <li>http://www.iriscouch.com/</li>
+                        <li>https://www.couchappy.com/</li>
+                    </ul>
+
+                </p>
+            </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-12" ng-if="loading">
-            loading...
-        </div>
-        <div class="col-md-12" ng-if="!loading">
-            <tabset>
-                <tab heading="Pomodoro" active="tabState.pomodoro">
-                    <div class="setting">
-                        <div class="settings-label">
-                            <label for="rounds">Rounds</label>
-                        </div>
-                        <div class="settings-value">
-                            <input id="rounds" ng-model="settings.pomodoroRounds">
-                        </div>
-                    </div>
-                    <div class="setting">
-                        <div class="settings-label">
-                            <label for="goal">Goal</label>
-                        </div>
-                        <div class="settings-value">
-                            <input id="goal" ng-model="settings.pomodoroGoal">
-                        </div>
-                    </div>
-                    <div class="setting">
-                        <div class="settings-label">
-                            <label for="short-break">Short Break</label>
-                        </div>
-                        <div class="settings-value">
-                            <input id="short-break" ng-model="settings.pomodoroShortBreak">
-                        </div>
-                    </div>
-                    <div class="setting">
-                        <div class="settings-label">
-                            <label for="long-break">Long Break</label>
-                        </div>
-                        <div class="settings-value">
-                            <input id="long-break" ng-model="settings.pomodoroLongBreak">
-                        </div>
-                    </div>
-                </tab>
-                <tab heading="Tasks" active="tabState.tasks">
-                    <div ui-sortable ng-model="tasks.active">
-                        <div ng-repeat="task in tasks.active" style="cursor: move;" class="task">
-                                <span class="index">
-                                    {{$index+1}}
-                                </span>
-                                <span class="title">
-                                    {{task.title}}
-                                </span>
-                                <span>
-                                    <span ng-if="task.project" class="tag">{{task.project}}</span>
-                                    <span ng-repeat="tag in task.tags" class="tag">{{tag}}</span>
-                                </span>
-                                <span>
-                                       <span ng-if="task.source == SOURCES.Asana"><img src="assets/asana-icon.png"
-                                                                                       class="source asana-source"></span>
-                                    <span ng-if="task.source == SOURCES.Trello"><img src="assets/trello-icon.png"
-                                                                                     class="source"></span>
-                                </span>
-                        </div>
-                    </div>
-                </tab>
-                <tab heading="Asana" active="tabState.asana">
-                    <button class="btn btn-default" ng-click="refreshAsana()" ng-disabled="$root.asana.isLoading">
-                        Refresh
-                    </button>
-                    <div class="setting">
-                        <div class="settings-label">
-                            <label for="asana-api-key">API key</label>
-                        </div>
-                        <div class="settings-value" id="asana-api-key-value">
-                            <input id="asana-api-key" ng-model="settings.asanaApiKey" ng-blur="asanaApiBlurred()"
-                                   ng-disabled="asana.isLoading">
-                        </div>
-                        <img class="loading" src="assets/loader.gif" ng-if="$root.asana.isLoading">
-
-                        <div id="profile">
-                            <img ng-src="{{$root.asana.user.photo}}" ng-if="$root.asana.user.photo"
-                                 class="profile-photo">
-
-                            <div ng-if="$root.asana.user.name" class="name">{{$root.asana.user.name}}</div>
-                        </div>
-                        <div class="error" ng-if="asana.error">
-                            <span class="glyphicon glyphicon-minus-sign"></span> {{asana.error}}
-                        </div>
-                        <br>
-
-                        <div ng-if="!$root.asana.isLoading && $root.asana.user">
-                            <dropdown items="$root.asana.workspaces" value="name"
-                                      selected="$root.asana.selectedWorkspace"></dropdown>
-                            <!--<dropdown items="asana.projects" value="name" selected="asana.selectedProject" ng-if="!asana.isLoadingProjects"></dropdown>-->
-                        </div>
-
-
-                    </div>
-                    <img class="loading" src="assets/loader.gif" ng-if="$root.asana.isLoadingTasks">
-
-                    <div class="row task"
-                         ng-repeat="task in $root.asana.tasks">
-
-                        <div class="col-md-12">
-                            <div>
-                                <span class="index">{{$index+1}}</span>
-                                <span class="title">{{task.name}}</span>
-                                <span ng-if="task.project" class="tag">{{task.project}}</span>
-                                <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
-                                <img class="loading" src="assets/loader.gif" ng-if="task.isLoadingTags">
-
-                                <div class="btn btn-default" ng-click="useTask(task)">Add</div>
-                            </div>
-                        </div>
-                    </div>
-                </tab>
-            </tabset>
-
-
-        </div>
-    </div>
-
 
 </div>
+<!--<div class="row">-->
+    <!--<div class="col-lg-12">-->
+        <!--<div class="widget">-->
+            <!--<div class="widget-title">-->
+                <!--Tasks-->
+            <!--</div>-->
+            <!--<div class="widget-body medium no-padding">-->
+                <!--<div ui-sortable ng-model="tasks.active">-->
+                    <!--<div ng-repeat="task in tasks.active" style="cursor: move;" class="task">-->
+                            <!--<span class="index">-->
+                                <!--{{$index+1}}-->
+                            <!--</span>-->
+                            <!--<span class="title">-->
+                                <!--{{task.title}}-->
+                            <!--</span>-->
+                            <!--<span>-->
+                                <!--<span ng-if="task.project" class="tag">{{task.project}}</span>-->
+                                <!--<span ng-repeat="tag in task.tags" class="tag">{{tag}}</span>-->
+                            <!--</span>-->
+                            <!--<span>-->
+                                   <!--<span ng-if="task.source == SOURCES.Asana"><img src="assets/asana-icon.png"-->
+                                                                                   <!--class="source asana-source"></span>-->
+                                <!--<span ng-if="task.source == SOURCES.Trello"><img src="assets/trello-icon.png"-->
+                                                                                 <!--class="source"></span>-->
+                            <!--</span>-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
+<!--</div>-->
+<div class="row">
+    <div class="col-lg-4">
+        <div class="widget">
+            <div class="widget-title">
+                Asana
+            </div>
+            <div class="widget-body medium no-padding">
+                <button class="btn btn-default" ng-click="refreshAsana()" ng-disabled="$root.asana.isLoading">
+                    Refresh
+                </button>
+                <div class="setting">
+                    <div class="settings-label">
+                        <label for="asana-api-key">API key</label>
+                    </div>
+                    <div class="settings-value" id="asana-api-key-value">
+                        <input id="asana-api-key" ng-model="settings.asanaApiKey" ng-blur="asanaApiBlurred()"
+                               ng-disabled="asana.isLoading">
+                    </div>
+                    <img class="loading" src="assets/loader.gif" ng-if="$root.asana.isLoading">
+
+                    <div id="profile">
+                        <img ng-src="{{$root.asana.user.photo}}" ng-if="$root.asana.user.photo"
+                             class="profile-photo">
+
+                        <div ng-if="$root.asana.user.name" class="name">{{$root.asana.user.name}}</div>
+                    </div>
+                    <div class="error" ng-if="asana.error">
+                        <span class="glyphicon glyphicon-minus-sign"></span> {{asana.error}}
+                    </div>
+                    <br>
+
+                    <div ng-if="!$root.asana.isLoading && $root.asana.user">
+                        <dropdown items="$root.asana.workspaces" value="name"
+                                  selected="$root.asana.selectedWorkspace"></dropdown>
+                        <!--<dropdown items="asana.projects" value="name" selected="asana.selectedProject" ng-if="!asana.isLoadingProjects"></dropdown>-->
+                    </div>
+
+
+                </div>
+                <img class="loading" src="assets/loader.gif" ng-if="$root.asana.isLoadingTasks">
+
+                <div class="row task"
+                     ng-repeat="task in $root.asana.tasks">
+
+                    <div class="col-md-12">
+                        <div>
+                            <span class="index">{{$index+1}}</span>
+                            <span class="title">{{task.name}}</span>
+                            <span ng-if="task.project" class="tag">{{task.project}}</span>
+                            <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
+                            <img class="loading" src="assets/loader.gif" ng-if="task.isLoadingTags">
+
+                            <div class="btn btn-default" ng-click="useTask(task)">Add</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="widget">
+            <div class="widget-title">
+                Trello
+            </div>
+            <div class="widget-body medium no-padding">
+                We're not quite there yet.. Want to contribute? We'd love help with this.
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="widget">
+            <div class="widget-title">
+                Basecamp
+            </div>
+            <div class="widget-body medium no-padding">
+                Want to contribute? We'd love help with this.
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
