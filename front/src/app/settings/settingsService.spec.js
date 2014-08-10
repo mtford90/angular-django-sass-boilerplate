@@ -13,7 +13,7 @@ describe('app.settings.settings-service', function () {
         });
     });
 
-    describe.only('map/reduce', function () {
+    describe('map/reduce', function () {
         var map;
 
         /**
@@ -66,7 +66,6 @@ describe('app.settings.settings-service', function () {
                 assert.equal(10, res.blah2.value);
             });
         });
-
     });
 
     it('test set', function (done) {

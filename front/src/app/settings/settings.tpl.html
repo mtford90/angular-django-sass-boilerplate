@@ -5,7 +5,10 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-12" ng-if="loading">
+            loading...
+        </div>
+        <div class="col-md-12" ng-if="!loading">
             <tabset>
                 <tab heading="Pomodoro" active="tabState.pomodoro">
                     <div class="setting">
@@ -108,18 +111,9 @@
                                 <span ng-if="task.project" class="tag">{{task.project}}</span>
                                 <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
                                 <img class="loading" src="assets/loader.gif" ng-if="task.isLoadingTags">
+
                                 <div class="btn btn-default" ng-click="useTask(task)">Add</div>
                             </div>
-                        </div>
-                    </div>
-                </tab>
-                <tab heading="Trello" active="tabState.trello">
-                    <div class="setting">
-                        <div class="settings-label">
-                            <label for="trello-api-key">API key</label>
-                        </div>
-                        <div class="settings-value">
-                            <input id="trello-api-key" ng-model="settings.trelloApiKey" ng-blur="trelloApiBlurred()">
                         </div>
                     </div>
                 </tab>

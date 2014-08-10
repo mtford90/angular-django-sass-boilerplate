@@ -1,9 +1,11 @@
 angular.module('app.settings', [
     'app.asana.restangular',
     'app.asana.data',
-    'LocalStorageModule',
     'dropdown',
-    'ui.sortable'
+    'ui.sortable',
+    'pouch',
+    'LocalStorageModule',
+    'ui.router'
 ])
 
     .config(function config($stateProvider) {
@@ -19,28 +21,17 @@ angular.module('app.settings', [
         });
     })
 
-    .config(['localStorageServiceProvider', function (localStorageServiceProvider) {
-        localStorageServiceProvider.setPrefix('pomodoro');
-    }])
 
 
 
     .constant('SOURCES', {
-        Trello: 'trello',
         Asana: 'asana'
     })
 
     .constant('ASANA_API_KEY', 'asanaApiKey')
 
+    .factory('AsanaSettings', function ($rootScope, SettingsService, ASANA_ERRORS, $log, ASANA_API_KEY,  AsanaData, $q) {
 
-/**
- * Manages Asana settings in $rootScope.
- */
-    .factory('AsanaSettings', function ($rootScope, SettingsService, ASANA_ERRORS, $log, SETTING_CHANGED_EVENT, ASANA_API_KEY, SETTING_CHANGED_PROPERTY_KEY, AsanaData, $q) {
-
-        /**
-         * Setup Asana settings in $rootScope for the first time.
-         */
         function resetAsanaScope() {
             $rootScope.asana = {
                 apiKey: '',
@@ -69,7 +60,6 @@ angular.module('app.settings', [
          * Setup Asana settings in $rootScope by hitting the Asana API.
          */
         function configureAsanaOnAPIKeyChange() {
-            $log.info('configuring ASANA');
             var deferred = $q.defer();
             resetAsanaScope();
             $rootScope.asana.isLoading = true;
@@ -109,16 +99,14 @@ angular.module('app.settings', [
         };
     })
 
-    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, SOURCES, ASANA_API_KEY, ASANA_ERRORS, $stateParams, $state, AsanaSettings) {
-
+    .controller('SettingsCtrl', function SettingsCtrl($scope, $log, SOURCES, ASANA_API_KEY, ASANA_ERRORS, $stateParams, $state, AsanaSettings, SettingsService) {
         $scope.SOURCES = SOURCES; // So that we can access these from the templates.
 
         (function configureTab() {
             $scope.tabState = {
                 pomodoro: $stateParams.tab == 'pomodoro',
                 tasks: $stateParams.tab == 'tasks',
-                asana: $stateParams.tab == 'asana',
-                trello: $stateParams.tab == 'trello'
+                asana: $stateParams.tab == 'asana'
             };
             var tabIsSelected = false;
             var watcher = function (tab, selected) {
@@ -141,18 +129,36 @@ angular.module('app.settings', [
             }
         })();
 
+        $scope.loading = true;
         $scope.settings = {
-            pomodoroRounds: SettingsService.get('pomodoroRounds', 4),
-            pomodoroGoal: SettingsService.get('pomodoroGoal', 17),
-            pomodoroShortBreak: SettingsService.get('pomodoroShortBreak', 5),
-            pomodoroLongBreak: SettingsService.get('pomodoroLongBreak', 15),
-            asanaApiKey: SettingsService.get(ASANA_API_KEY),
-            trelloApiKey: SettingsService.get('trelloApiKey')
+            pomodoroRounds: null,
+            pomodoroGoal: null,
+            pomodoroShortBreak: null,
+            pomodoroLongBreak: null,
+            asanaApiKey: null
         };
 
+        SettingsService.getAll(function (err, settings) {
+            if (!err) {
+                $scope.loading = false;
+                $log.info('settings:', settings);
+                $scope.settings.pomodoroRounds = settings.pomodoroRounds || 4;
+                $scope.settings.pomodoroGoal = settings.pomodoroGoal || 17;
+                $scope.settings.pomodoroShortBreak = settings.pomodoroShortBreak || 5;
+                $scope.settings.pomodoroLongBreak = settings.pomodoroLongBreak || 15;
+                $scope.settings.asanaApiKey = settings.asanaApiKey;
+            }
+            else {
+                $log.error('error getting settings:', err);
+                // TODO: Handle error here.
+            }
+        });
+
+
+
         // These settings are only saved to local storage when onBlur event is fired.
-        // This is so that we avoid repeatedly sending invalid requests to Asana/Trello etc.
-        var settingsToBlur = ['asanaApiKey', 'trelloApiKey'];
+        // This is so that we avoid repeatedly sending invalid requests to Asana etc.
+        var settingsToBlur = ['asanaApiKey'];
 
         $scope.tasks = {
             active: []
@@ -192,7 +198,6 @@ angular.module('app.settings', [
         };
 
         $scope.asanaApiBlurred = _.partial($scope.onBlur, ASANA_API_KEY);
-        $scope.trelloApiBlurred = _.partial($scope.onBlur, 'trelloApiKey');
 
         /**
          * Watch for changes to settings, validate them and propagate to the settings service

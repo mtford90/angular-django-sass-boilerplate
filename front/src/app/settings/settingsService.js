@@ -1,7 +1,4 @@
-angular.module('app.settings', [
-    'pouch',
-    'LocalStorageModule'
-])
+angular.module('app.settings')
 
     .constant('SETTINGS_MAP_REDUCE', {
         name: 'settings_index',
@@ -57,14 +54,19 @@ angular.module('app.settings', [
         lazyPouchDBProvider.INDEXES[SETTINGS_MAP_REDUCE.name] = SETTINGS_MAP_REDUCE.index;
     })
 
-    .factory('SettingsService', function (lazyPouchDB) {
+    .factory('SettingsService', function (lazyPouchDB, $rootScope) {
         return {
             set: function (key, value, callback) {
+                var wrappedCallback = function (err) {
+                    $rootScope.$apply(function () {
+                        if (callback) callback(err);
+                    })
+                };
                 lazyPouchDB.getPromise().then(function (pouch) {
                     pouch.post({type: 'setting', ts: new Date().getTime(), name: key, value: value}).then(function (resp) {
-                        callback(null);
-                    }, callback);
-                }, callback);
+                        wrappedCallback(null);
+                    }, wrappedCallback);
+                }, wrappedCallback);
             },
             get: function (key, callback) {
                 this.getAll(function (err, settings) {
@@ -72,29 +74,36 @@ angular.module('app.settings', [
                     if (!err) {
                         value = settings[key];
                     }
-                    callback(err, value);
+                    if (callback)  callback(err, value);
                 });
             },
             getAll: function (callback) {
+                callback = callback || function () {};
                 lazyPouchDB.getPromise().then(function (pouch) {
                     pouch.query('settings_index', function (err, response) {
-                        if (err) {
-                            callback(err);
-                        }
-                        else if (response.rows.length) {
-                            var settings = response.rows[0].value;
-                            for (var k in settings) {
-                                if (settings.hasOwnProperty(k)) {
-                                    settings[k] = settings[k].value;
-                                }
+                        $rootScope.$apply(function () {
+                            if (err) {
+                                callback(err);
                             }
-                            callback(null, settings);
-                        }
-                        else {
-                            callback(null, {});
-                        }
+                            else if (response.rows.length) {
+                                var settings = response.rows[0].value;
+                                for (var k in settings) {
+                                    if (settings.hasOwnProperty(k)) {
+                                        settings[k] = settings[k].value;
+                                    }
+                                }
+                                callback(null, settings);
+                            }
+                            else {
+                                callback(null, {});
+                            }
+                        });
                     });
-                }, callback);
+                }, function (err) {
+                    $rootScope.$apply(function () {
+                        if (callback) callback(err);
+                    })
+                });
             }
         };
     });

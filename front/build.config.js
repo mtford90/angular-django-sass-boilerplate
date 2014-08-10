@@ -83,13 +83,16 @@ module.exports = {
             'vendor/restangular/src/restangular.js'
         ],
         css: [
-            'vendor/bootstrap/dist/css/*.css*',
-            'src/css/*.css'
+            'vendor/bootstrap/dist/css/bootstrap-theme.css',
+            'vendor/bootstrap/dist/css/bootstrap.css',
+            'src/css/**/*.css',
+            'vendor/font-awesome/css/font-awesome.css'
         ],
         sass: [
         ],
         assets: [
-            'vendor/bootstrap/dist/fonts/*'
+            'vendor/bootstrap/dist/fonts/*',
+            'vendor/font-awesome/fonts/*'
         ]
     }
 };
