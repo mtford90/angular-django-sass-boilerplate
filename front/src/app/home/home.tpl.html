@@ -1,8 +1,15 @@
 <div class="text-center row">
     <div id="timer">
-        <div id="clock">00:35</div>
+        <div id="clock" style="font-family: Inconsolata">
+            <span ng-if="timer.hours">
+                {{pad(timer.hours)}}:
+            </span>
+            {{pad(timer.minutes)}}:{{pad(timer.seconds)}}
+        </div>
         <div>
-            Start/Stop
+            <button ng-click="startTimer()" >Reset Timer</button>
+            <button ng-click="resumeTimer()" >Resume Timer</button>
+            <button ng-click="stopTimer()">Stop Timer</button>
         </div>
         <div>
             Task #1 Tick
@@ -20,21 +27,21 @@
 </div>
 
 <!--<div class="row stat">-->
-    <!--<div class="col-sm-6 text-right">-->
-        <!--Round-->
-    <!--</div>-->
-    <!--<div class="col-sm-6 text-left">-->
-        <!--<span class="dividend">2</span><span class="divisor">/4</span>-->
-    <!--</div>-->
+<!--<div class="col-sm-6 text-right">-->
+<!--Round-->
+<!--</div>-->
+<!--<div class="col-sm-6 text-left">-->
+<!--<span class="dividend">2</span><span class="divisor">/4</span>-->
+<!--</div>-->
 <!--</div>-->
 
 <!--<div class="row stat">-->
-    <!--<div class="col-sm-6 text-right">-->
-        <!--Goal-->
-    <!--</div>-->
-    <!--<div class="col-sm-6 text-left">-->
-        <!--<span class="dividend">2</span><span class="divisor">/17</span>-->
-    <!--</div>-->
+<!--<div class="col-sm-6 text-right">-->
+<!--Goal-->
+<!--</div>-->
+<!--<div class="col-sm-6 text-left">-->
+<!--<span class="dividend">2</span><span class="divisor">/17</span>-->
+<!--</div>-->
 <!--</div>-->
 
 
