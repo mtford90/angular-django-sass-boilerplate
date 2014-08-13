@@ -1,11 +1,13 @@
 angular.module('app.asana.restangular', ['restangular', 'base64'])
 
     // If an asana http request, pull the API key from settings service and inject into the headers.
-    .factory('APIKeyInterceptor', function ($base64, $log, $q, ASANA_API_KEY, SettingsService, ASANA_ERRORS) {
+    .factory('APIKeyInterceptor', function ($base64, $log, $q, SettingsService, ASANA_ERRORS, $rootScope) {
         return {
             request: function (config) {
                 if (config.url.substring(0, 6) == "/asana") {
-                    var apiKey = SettingsService.get(ASANA_API_KEY);
+                    var settings = $rootScope.settings;
+                    $log.debug('settings:', settings, $rootScope);
+                    var apiKey = settings.asanaApiKey;
                     if (apiKey) {
                         apiKey = apiKey.trim();
                         if (apiKey.length) {

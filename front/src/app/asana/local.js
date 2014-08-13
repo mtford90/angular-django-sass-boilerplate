@@ -1,12 +1,11 @@
 angular.module('app.asana.data')
 
 
-
     // A set of stored procedures, mirroring AsanaDataAccess but hitting the local PouchDB instance
     // instead.
     .factory('AsanaLocal', function ($q, $log, lazyPouchDB) {
 
-        function getUser() {
+        function getUser(callback) {
             var def = $q.defer();
             lazyPouchDB.getPromise().then(function (pouch) {
                 pouch.query('active_user_index', function (err, resp) {
@@ -17,11 +16,16 @@ angular.module('app.asana.data')
                         var row = resp.rows[0];
                         var doc = row.value;
                         def.resolve(doc);
+                        if (callback) callback(null, doc);
                     }
                     else {
                         def.resolve();
+                        if (callback) callback(null);
                     }
-                }, def.reject);
+                }, function (err) {
+                    if (callback) callback(err);
+                    def.reject(err);
+                });
             });
             return def.promise;
         }
@@ -43,16 +47,16 @@ angular.module('app.asana.data')
             return processedRows;
         }
 
-        function getTasks() {
+        function getTasks(workspaceId, includeActiveTasks) {
+            includeActiveTasks = includeActiveTasks === undefined ? true : includeActiveTasks;
             var deferred = $q.defer();
             lazyPouchDB.getPromise().then(function (pouch) {
-                pouch.query('asana_tasks_index').then(function (res) {
-                    pouch.query('asana_tasks_index').then(function (res) {
-                        $log.debug('asana_tasks_index:', res);
-                        var processed = processRows(res.rows);
-                        $log.debug('processed tasks:', processed);
-                        deferred.resolve(processed);
-                    });
+                var index = includeActiveTasks ? 'asana_tasks_index_workspace' : 'asana_tasks_index_workspace_inactive_tasks';
+                pouch.query(index,{key: workspaceId}).then(function (res) {
+                    $log.debug('asana_tasks_index_workspace:', res);
+                    var processed = processRows(res.rows);
+                    $log.debug('processed tasks:', processed);
+                    deferred.resolve(processed);
                 });
             }, deferred.reject);
             return deferred.promise;
@@ -103,22 +107,46 @@ angular.module('app.asana.data')
             return setActiveUserDeferred.promise;
         }
 
-        function addTask(task) {
+        function addTask(task, callback) {
+            $log.debug('addTask', task);
             task.type = 'task';
             task.source = 'asana';
             var deferred = $q.defer();
             lazyPouchDB.getPromise().then(function (pouch) {
-                pouch.post(task, function (err, resp) {
+                pouch.query('task_by_asana_id', {key: task.id}, function (err, resp) {
+                    $log.debug('task_by_asana_id', resp);
                     if (err) {
+                        if (callback) callback(err);
                         deferred.reject(err);
                     }
                     else {
-                        task._id = resp.id;
-                        task._rev = resp.rev;
-                        deferred.resolve(task);
+                        if (resp.rows.length) {
+                            err = 'task with asana id' + task.id.toString() + ' already exists';
+                            if (callback) callback(err);
+                            deferred.reject(err);
+                        }
+                        else {
+                            pouch.post(task, function (err, resp) {
+                                if (err) {
+                                    if (callback) callback(err);
+                                    deferred.reject(err);
+                                }
+                                else {
+                                    task._id = resp.id;
+                                    task._rev = resp.rev;
+                                    if (callback) callback(null, task);
+                                    deferred.resolve(task);
+                                }
+                            });
+                        }
                     }
+
                 });
-            }, deferred.reject);
+
+            }, function (err) {
+                if (callback) callback(err);
+                deferred.reject(err);
+            });
             return deferred.promise;
         }
 
@@ -157,39 +185,30 @@ angular.module('app.asana.data')
             return deferred.promise;
         }
 
-        function addTasks(tasks) {
+        function addTasks(tasks, callback) {
             var deferred = $q.defer();
-            lazyPouchDB.getPromise().then(function (pouch) {
-                _.each(tasks, function (task) {
-                    task.source = 'asana';
-                    task.type = 'task';
-                });
-                pouch.bulkDocs(tasks, function (err, responses) {
-                    if (err) {
-                        deferred.reject(err);
-                    }
-                    var failedResponses = [];
-                    var succeededTasks = [];
-                    for (var idx = 0; idx < responses.length; idx++) {
-                        var response = responses[idx];
-                        if (response.ok) {
-                            var task = tasks[idx];
-                            task._id = response.id;
-                            task._rev = response.rev;
-                            succeededTasks.push(task);
-                        }
-                        else {
-                            failedResponses.push(response);
-                        }
-                    }
-                    if (failedResponses.length) {
-                        deferred.reject(failedResponses);
+            var errors = [];
+            var addTaskCallback = function (err) {
+                if (err) {
+                    errors.push(err);
+                }
+                numFinished++;
+                if (numFinished == tasks.length) {
+                    if (errors.length) {
+                        if (callback) callback(errors);
+                        deferred.reject(errors);
                     }
                     else {
-                        deferred.resolve(succeededTasks);
+                        if (callback) callback();
+                        deferred.resolve(tasks);
                     }
-                });
-            });
+                }
+            };
+            for (var i = 0; i < tasks.length; i++) {
+                var task = tasks[i];
+                var numFinished = 0;
+                addTask(task, addTaskCallback);
+            }
             return deferred.promise;
         }
 

@@ -57,7 +57,7 @@ describe('expected pouch behaviour', function () {
                     };
                     pouch.put(myIndex).then(function (resp) {
                         console.log('done installing index');
-                        pouch.query('my_index', {stale:'update_after'}, callback);
+                        pouch.query('my_index', {stale: 'update_after'}, callback);
                     }, callback);
                 },
                 function (putResponse, callback) {
@@ -85,6 +85,37 @@ describe('expected pouch behaviour', function () {
 
             ],
             _.partial(waterfallError, done));
+    });
+
+    it('test active', function (done) {
+        var pouch = new PouchDB(guid());
+        var myIndex = {
+            _id: '_design/my_index',
+            views: {
+                'my_index': {
+                    map: function (doc) {
+                        if (doc.type == 'task' && doc.source == 'asana') {
+                            emit(doc.id, doc);
+                        }
+                    }.toString()
+                }
+            }
+        };
+        pouch.post(myIndex, function (err) {
+            assert.notOk(err);
+            var obj = {blah: 1, type: 'task', id: 5, source:'asana'};
+            pouch.post(obj, function (err, resp) {
+                assert.notOk(err);
+                obj._id = resp.id;
+                obj._rev = resp.rev;
+                pouch.query('my_index', {key: 6}, function (err, resp) {
+                    assert.equal(resp.total_rows, 1)
+                    assert.equal(resp.rows.length, 0)
+                    done();
+                });
+            });
+        });
+        pouch.query()
     });
 });
 

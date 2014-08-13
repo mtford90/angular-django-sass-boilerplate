@@ -12,8 +12,10 @@ describe('app.asana.data', function () {
             $q = _$q_;
             $rootScope = _$rootScope_;
             AsanaLocal = _AsanaLocal_;
-            clearStorage().then(done, done);
+
         });
+
+        clearStorage().then(done, done);
     });
 
     describe('User', function () {
@@ -267,8 +269,21 @@ describe('app.asana.data', function () {
                 );
             });
 
-
         }));
+
+        it('should raise an error if Asana task with that id already exists', function (done) {
+            AsanaLocal.addTasks([
+                {id: '5', name: 'a task'}
+            ]).then(function success(tasks) {
+                AsanaLocal.addTasks([
+                    {id: '5', name: 'a task'}
+                ]).then(function success(tasks) {
+                    done('should not have succeeeded');
+                }, function (err) {
+                    done();
+                });
+            }, done);
+        });
 
     });
 

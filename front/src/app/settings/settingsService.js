@@ -106,4 +106,59 @@ angular.module('app.settings')
                 });
             }
         };
+    })
+
+    .factory('Settings', function ($rootScope, SettingsService, $q, $log) {
+        var deferred = $q.defer();
+
+        $rootScope.settings = {
+            asanaApiKey: null,
+            pomodoroRounds: null,
+            pomodoroGoal: null,
+            pomodoroShortBreak: null,
+            pomodoroLongBreak: null
+        };
+
+        $log.debug('Initialising settings from PouchDB');
+        SettingsService.getAll(function (err, settings) {
+            if (!err) {
+                $rootScope.loading = false;
+                $log.info('settings:', settings);
+                $rootScope.settings = settings;
+                $rootScope.settings.pomodoroRounds = settings.pomodoroRounds || 4;
+                $rootScope.settings.pomodoroGoal = settings.pomodoroGoal || 17;
+                $rootScope.settings.pomodoroShortBreak = settings.pomodoroShortBreak || 5;
+                $rootScope.settings.pomodoroLongBreak = settings.pomodoroLongBreak || 15;
+                $rootScope.settings.asanaApiKey = settings.asanaApiKey;
+                $log.debug('Initialised settings from PouchDB');
+                deferred.resolve();
+            }
+            else {
+                $log.error('error getting settings:', err);
+                deferred.reject(err);
+            }
+        });
+
+        function waitForLoad(callback) {
+            deferred.promise.then(function () {
+                callback(null, $rootScope.settings);
+            }, callback);
+        }
+
+        return {
+            waitForLoad: waitForLoad,
+            get: SettingsService.get,
+            set: function (key, value) {
+                waitForLoad(function (err) {
+                    if (!err) {
+                        $rootScope.settings[key] = value;
+                        SettingsService.set(key, value);
+                    }
+                    else {
+
+                    }
+                });
+            },
+            getAll: waitForLoad
+        }
     });

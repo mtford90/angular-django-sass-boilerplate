@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title ng-bind="pageTitle"></title>
+    <title update-title></title>
 
     <!-- compiled CSS --><% styles.forEach( function ( file ) { %>
     <link rel="stylesheet" type="text/css" href="<%= file %>"/>
@@ -35,8 +35,12 @@
                 <a href ui-sref="tasks">Tasks <span class="menu-icon fa fa-tasks"></span></a>
             </li>
             <li class="sidebar-list">
+                <a href ui-sref="stats">Stats <span class="menu-icon fa fa-bar-chart-o "></span></a>
+            </li>
+            <li class="sidebar-list">
                 <a href ui-sref="settings">Settings <span class="menu-icon fa fa-cogs"></span></a>
             </li>
+
         </ul>
         <div class="sidebar-footer">
             <div class="col-xs-4">
@@ -67,11 +71,9 @@
             <div class="row header">
                 <div class="col-xs-12">
                     <div class="meta pull-left">
-                        <div class="page">
-                            Timer
+                        <div class="page" update-title>
                         </div>
-                        <div class="breadcrumb-links">
-                            Timer
+                        <div class="breadcrumb-links" update-title>
                         </div>
                     </div>
                 </div>
@@ -86,9 +88,6 @@
 
 
             </div>
-
-
-
 
 
             <!-- End Main Content -->

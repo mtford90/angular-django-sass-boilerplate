@@ -17,7 +17,8 @@ angular.module('app.logging', [])
     .factory('jlogConfig', function (logLevels) {
         var ll = {
             http: logLevels.debug,
-            resources: logLevels.warning
+            resources: logLevels.warning,
+            TasksCtrl: logLevels.debug
         };
 
         var t = {};

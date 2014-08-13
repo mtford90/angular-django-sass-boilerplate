@@ -1,1 +1,64 @@
-asdasddfsdfsd
+</div>
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="widget">
+            <div class="widget-title">
+                <i class="fa fa-tasks"></i> Tasks
+            </div>
+            <div class="widget-body medium no-padding" ng-if="activeTasks.loadingActiveTasks">
+                <loading></loading>
+            </div>
+            <div class="widget-body" ng-if="!activeTasks.loadingActiveTasks">
+                <div class="task"
+                     ng-repeat="task in activeTasks.activeTasks" >
+                    <!--{{task}}-->
+                    <span class="title">{{task.name}}</span>
+                    <span ng-if="task.project" class="tag">{{task.project}}</span>
+                    <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
+                    <div class="btn btn-default" ng-click="deactivateTask(task)">Remove</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="widget">
+            <div class="widget-title">
+                <i class="fa fa-tasks"></i> Asana Tasks
+                <div class="pull-right">
+                    <i class="fa fa-cog fa-spin"
+                       style="font-size: 20px"
+                       tooltip="Connecting to Asana..."
+                       ng-if="tasks.loading"></i>
+                    <i class="fa fa-times-circle"
+                       style="color: darkred; font-size: 20px"
+                       tooltip="{{tasks.error.data.errors.length ? tasks.error.data.errors[0].message : tasks.error.statusText}}"
+                       ng-if="tasks.error"></i>
+                </div>
+                <div class="pull-right">
+                    <dropdown ng-if="tasks.workspaces"
+                              items="tasks.workspaces"
+                              value="name"
+                              selected="tasks.selectedWorkspace">
+                    </dropdown>
+                </div>
+            </div>
+            <div class="widget-body medium no-padding" ng-if="tasks.loadingTasks && !tasks.error">
+                <loading></loading>
+            </div>
+            <div class="widget-body" ng-if="!tasks.loadingTasks || tasks.error">
+                <div class="row task"
+                     ng-repeat="task in tasks.tasks">
+                    <span class="index">{{$index+1}}</span>
+                    <span class="title">{{task.name}}</span>
+                    <span ng-if="task.project" class="tag">{{task.project}}</span>
+                    <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
+                    <div class="btn btn-default" ng-click="activateTask(task)">Add</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

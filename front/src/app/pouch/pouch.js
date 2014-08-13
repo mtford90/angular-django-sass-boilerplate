@@ -13,9 +13,44 @@ angular.module('pouch', [])
                     }
                 }
             },
+            asana_tasks_index_workspace: {
+                map: function (doc) {
+                    if (doc.type == 'task' && doc.source == 'asana') {
+                        emit(doc.workspaceId, doc);
+                    }
+                }
+            },
+            asana_tasks_index_workspace_inactive_tasks: {
+                map: function (doc) {
+                    if (doc.type == 'task' && !doc.active && doc.source == 'asana') {
+                        emit(doc.workspaceId, doc);
+                    }
+                }
+            },
             active_user_index: {
                 map: function (doc) {
                     if (doc.type == 'user' && doc.active) {
+                        emit(doc.id, doc);
+                    }
+                }
+            },
+            active_tasks: {
+                map: function (doc) {
+                    if (doc.type == 'task' && doc.active) {
+                        emit(doc._id, doc);
+                    }
+                }
+            },
+            task_by_asana_id: {
+                map: function (doc) {
+                    if (doc.type == 'task' && doc.source == 'asana') {
+                        emit(doc.id, doc);
+                    }
+                }
+            },
+            active_tasks_by_asana_id: {
+                map: function (doc) {
+                    if (doc.type == 'task' && doc.active && doc.source == 'asana') {
                         emit(doc.id, doc);
                     }
                 }
@@ -175,12 +210,19 @@ angular.module('pouch', [])
             initialisePouchDB();
 
             return {
-                getPromise: function () {
+                getPromise: function (callback) {
                     if (deferred) {
+                        if (callback) {
+                            deferred.promise.then(function (pouch) {
+                                callback(null, pouch);
+                            }, callback);
+                        }
                         return deferred.promise;
                     }
+                    if (callback) callback('no promise');
                     return null;
                 },
+
                 inject: function (_pouch) {
                     var newDeferred = $q.defer();
 

@@ -141,6 +141,7 @@ angular.module('app.asana.data')
          * Given an array of rectangularized tasks, download the tags from Asana and then derectangularize everything
          * @param tasks
          * @returns a promise
+         * @param wid
          */
         function processTasks(tasks) {
             var deferred = $q.defer();
