@@ -21,10 +21,45 @@ angular.module('app.tasks', [
     .factory('ActiveTasks', function ($q, jlog, $rootScope, lazyPouchDB) {
         var $log = jlog.loggerWithName('ActiveTasks');
 
+        var service = {
+            activateTask: _.partial(modifyTaskState, true),
+            deactivateTask: _.partial(modifyTaskState, false),
+            getActiveTasks: function (callback) {
+//                callback = _.partial(callbackWrapper, callback);
+                lazyPouchDB.getPromise().then(function (pouch) {
+                    $log.debug('getActiveTasks: got pouch instance');
+                    pouch.query('active_tasks').then(function (tasks) {
+                        if (callback) {
+                            var taskValues = _.pluck(tasks.rows, 'value');
+                            $log.debug('getActiveTasks - got tasks:', taskValues);
+                            callback(null, taskValues);
+                        }
+                    }, function (err) {
+                        $log.error('getActiveTasks - problem querying', err);
+                        if (callback) callback(err);
+                    });
+                }, function (err) {
+                    if (callback) callback(err);
+                });
+            }
+        };
+
         function callbackWrapper(callback, err, doc) {
             if (callback) {
                 callback(err, doc);
             }
+        }
+
+        function configureActiveTasksScope() {
+            $rootScope.activeTasks = {
+                loadingActiveTasks: true,
+                activeTasks: []
+            };
+        }
+
+        if (!$rootScope.activeTasks) {
+            configureActiveTasksScope();
+            getActiveTasks();
         }
 
         function modifyTaskState(active, taskId, callback) {
@@ -49,6 +84,13 @@ angular.module('app.tasks', [
                             else {
                                 doc._id = response.id;
                                 doc._rev = response.rev;
+                                if (active) {
+                                    var activeTasks = $rootScope.activeTasks.activeTasks;
+                                    $log.debug('activeTasks', activeTasks);
+                                    $rootScope.$apply(function () {
+                                        activeTasks.push(doc);
+                                    });
+                                }
                                 callback(null, doc);
                             }
 
@@ -60,28 +102,23 @@ angular.module('app.tasks', [
 
         }
 
-        return {
-            activateTask: _.partial(modifyTaskState, true),
-            deactivateTask: _.partial(modifyTaskState, false),
-            getActiveTasks: function (callback) {
-//                callback = _.partial(callbackWrapper, callback);
-                lazyPouchDB.getPromise().then(function (pouch) {
-                    $log.debug('getActiveTasks: got pouch instance');
-                    pouch.query('active_tasks').then(function (tasks) {
-                        if (callback) {
-                            var taskValues = _.pluck(tasks.rows, 'value');
-                            $log.debug('getActiveTasks - got tasks:', taskValues);
-                            callback(null, taskValues);
-                        }
-                    }, function (err) {
-                        $log.error('getActiveTasks - problem querying', err);
-                        if (callback) callback(err);
+        function getActiveTasks() {
+            $rootScope.activeTasks.loadingActiveTasks = true;
+            service.getActiveTasks(function (err, tasks) {
+                $rootScope.activeTasks.loadingActiveTasks = false;
+                if (!err) {
+                    $log.debug('got active tasks', tasks);
+                    $rootScope.$apply(function () {
+                        $rootScope.activeTasks.activeTasks = tasks;
                     });
-                }, function (err) {
-                    if (callback) callback(err);
-                });
-            }
+                }
+                else {
+                    $log.error('error getting active tasks:', err);
+                }
+            })
         }
+
+        return service;
 
     })
 
@@ -101,29 +138,6 @@ angular.module('app.tasks', [
                 tasks: [],
                 loadingTasks: loading
             };
-        }
-
-        function configureActiveTasksScope() {
-            $parentScope.activeTasks = {
-                loadingActiveTasks: true,
-                activeTasks: []
-            };
-        }
-
-        function getActiveTasks() {
-            $parentScope.activeTasks.loadingActiveTasks = true;
-            ActiveTasks.getActiveTasks(function (err, tasks) {
-                $parentScope.activeTasks.loadingActiveTasks = false;
-                if (!err) {
-                    $log.debug('got active tasks', tasks);
-                    $parentScope.$apply(function () {
-                        $parentScope.activeTasks.activeTasks = tasks;
-                    });
-                }
-                else {
-                    $log.error('error getting active tasks:', err);
-                }
-            })
         }
 
         $scope.asanaIsEnabled = function () {
@@ -232,20 +246,12 @@ angular.module('app.tasks', [
             watch();
         }
 
-        if (!$parentScope.activeTasks) {
-            configureActiveTasksScope();
-            getActiveTasks();
-        }
-
         $scope.activateTask = function (task) {
             ActiveTasks.activateTask(task._id, function (err, task) {
                 if (err) {
                     $log.error('error activating task:', err);
                 }
             });
-            var activeTasks = $parentScope.activeTasks.activeTasks;
-            $log.debug('activeTasks', activeTasks);
-            activeTasks.push(task);
             var asanaTasks = $parentScope.tasks.tasks;
             var index = asanaTasks.indexOf(task);
             asanaTasks.splice(index, 1);
@@ -270,10 +276,6 @@ angular.module('app.tasks', [
 
         };
 
-
-        $scope.$watch('activeTasks.activeTasks', function (newValue) {
-            $log.debug('activeTasks:', newValue);
-        })
 
     })
 
