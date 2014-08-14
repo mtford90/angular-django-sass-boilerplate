@@ -116,6 +116,7 @@ angular.module('app.settings')
             pomodoroRounds: null,
             pomodoroGoal: null,
             pomodoroShortBreak: null,
+            pomodoroLength: null,
             pomodoroLongBreak: null
         };
 
@@ -125,6 +126,7 @@ angular.module('app.settings')
                 $rootScope.loading = false;
                 $log.info('settings:', settings);
                 $rootScope.settings = settings;
+                $rootScope.settings.pomodoroLength = settings.pomodoroLength || 25;
                 $rootScope.settings.pomodoroRounds = settings.pomodoroRounds || 4;
                 $rootScope.settings.pomodoroGoal = settings.pomodoroGoal || 17;
                 $rootScope.settings.pomodoroShortBreak = settings.pomodoroShortBreak || 5;

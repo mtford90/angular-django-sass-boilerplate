@@ -191,7 +191,7 @@ angular.module('pouch', [])
                             $log.debug('conflict, retrying');
                             retryUntilWritten(doc).then(retryDeferred.resolve, retryDeferred.reject);
                         } else { // new doc
-                            $log.debug('doc with id ' + id + ' does not exist so adding new doc', err);
+                            $log.debug('1');
                             // Avoid https://github.com/pouchdb/pouchdb/issues/2570 by only passing id param
                             // if one doesn't exist in the object itself.
                             return db.put(doc).then(function (resp) {

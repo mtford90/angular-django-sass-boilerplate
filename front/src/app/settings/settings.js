@@ -5,7 +5,8 @@ angular.module('app.settings', [
     'ui.sortable',
     'pouch',
     'LocalStorageModule',
-    'ui.router'
+    'ui.router',
+    'ctimer'
 ])
 
     .config(function config($stateProvider) {
