@@ -6,6 +6,88 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
         LongBreak: 3
     })
 
+    .directive('ctimerd', function ($rootScope, jlog, TimerMode, ctimerService) {
+
+        var $log = jlog.loggerWithName('ctimerdirective');
+
+        return {
+            restrict: 'A',
+            template: '<span class="pomodoro-timer">' +
+                '<span class="hours" ng-if="hours">{{pad(hours)}}</span><span ng-if="hours">:</span>' +
+                '<span class="minutes" ng-if="minutes !== null">{{pad(minutes)}}</span>:' +
+                '<span class="seconds" ng-if="seconds !== null">{{pad(seconds)}}</span>' +
+                '</span>',
+            scope: true,
+            link: function (scope, iElement, iAttrs) {
+                function configureScope() {
+                    $log.debug('configureScope');
+                    var sessionLength;
+                    if (scope.records.currentMode == TimerMode.Pomodoro) {
+                        sessionLength = scope.settings.pomodoroLength;
+                    }
+                    else if (scope.records.currentMode == TimerMode.ShortBreak) {
+                        sessionLength = scope.settings.pomodoroShortBreak;
+                    }
+                    else if (scope.records.currentMode == TimerMode.LongBreak) {
+                        sessionLength = scope.settings.pomodoroLongBreak;
+                    }
+                    else {
+                        $log.error('Unknown timer mode:', scope.records.currentMode);
+                        scope.err = 'Unknown timer mode';
+                        return;
+                    }
+                    sessionLength = sessionLength * 60; // sessionLength is stored in minutes
+                    var currSeconds = scope.records.seconds;
+                    if (!isNaN(currSeconds)) {
+                        $log.debug('sessionLength', sessionLength);
+                        $log.debug('currSeconds', currSeconds);
+                        var secondsRemaining = sessionLength - currSeconds;
+                        $log.debug('secondsRemaining', secondsRemaining);
+                        var seconds = Math.floor(secondsRemaining % 60);
+                        var minutes = Math.floor(secondsRemaining / 60 % 60);
+                        var hours = Math.floor(minutes / 60);
+                        scope.hours = hours;
+                        scope.minutes = minutes;
+                        scope.seconds = seconds;
+                        $log.debug('computed time:', {
+                            hours: hours,
+                            minutes: minutes,
+                            seconds: seconds
+                        });
+                    }
+                    else {
+                        $log.warn('currSeconds isNaN therefore ignoring', {currSeconds: currSeconds});
+                    }
+
+                }
+                scope.hours = null;
+                scope.minutes = null;
+                scope.seconds = null;
+                configureScope();
+                $log.debug('waiting for ctimerService to load before initialising timer directive');
+                ctimerService.get(function (err, records) { // Ensure that timer has finisehd loading.
+                    if (!err) {
+                        $log.debug('ctimerService has loaded', {err: err, records: records});
+
+                        configureScope();
+                        $rootScope.$on('tick', configureScope());
+                    }
+                    else {
+                        $log.error('cannot load ctimer directive as ctimerService failed', {err: err});
+                    }
+
+                });
+
+                scope.pad = function (n) {
+                    return ("00" + n).substr(-2,2);
+                }
+
+
+
+            }
+        }
+    })
+
     .factory('ctimerService', function ($rootScope, Settings, $q, jlog, localStorageService, lazyPouchDB, TimerMode) {
 
         var waitForSettings = $q.defer();
@@ -21,18 +103,26 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
             currentMode: null
         };
 
+        function writeRecords(records, callback) {
+            $log.debug('writeRecords');
+            lazyPouchDB.retryUntilWritten(records).then(function (resp) {
+                $log.debug('Successfully pushed timer records to disk');
+                if (callback) callback(null, resp);
+            }, function (err) {
+                $log.error('error writing timer records down to disk', err);
+                if (callback) callback(err);
+            });
+        }
+
         function initDefaults(callback) {
-            lazyPouchDB.retryUntilWritten({
+            var defaults = {
                 seconds: 0,
                 currentRound: 1,
                 completedRounds: 0,
                 currentMode: TimerMode.Pomodoro,
                 _id: 'ctimerService'
-            }).then(function (resp) {
-                if (callback) callback(null, resp);
-            }, function (err) {
-                if (callback) callback(err);
-            });
+            };
+            writeRecords(defaults, callback);
         }
 
         function init() {
@@ -47,76 +137,115 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                 }
             }
 
-            Settings.getAll(function (err) {
-                if (err) {
-                    waitForSettings.reject(err);
-                }
-                else {
-                    (function watch() {
-                        var handlePomodoroSettingsChange = function (setting, newValue) {
-                            $log.debug('handlePomodoroSettingsChange', newValue);
-                            $log.debug(setting.toString() + ' has changed:', newValue);
-                            evaluateState();
-                        };
-                        _.each(['settings.pomodoroLength'], function (setting) {
-                            $log.debug('watching "' + setting + '"');
-                            $rootScope.$watch(setting, _.partial(handlePomodoroSettingsChange, setting));
-                            $log.debug('watched "' + setting + '"');
-                        });
+            function watchSettings() {
+                var handlePomodoroSettingsChange = function (setting, newValue) {
+                    $log.debug('handlePomodoroSettingsChange', newValue);
+                    $log.debug(setting.toString() + ' has changed:', newValue);
+                    evaluateState();
+                };
+                _.each(['settings.pomodoroLength'], function (setting) {
+                    $log.debug('watching "' + setting + '"');
+                    $rootScope.$watch(setting, _.partial(handlePomodoroSettingsChange, setting));
+                    $log.debug('watched "' + setting + '"');
+                });
+            }
 
-                    })();
-                    settingsInitialised = true;
-                    checkForInitialisationCompletion();
-                }
-            });
-
-
-            lazyPouchDB.getPromise(function (err, pouch) {
-                if (!err) {
-                    pouch.get('ctimerService', function (err, doc) {
-                        function reset() {
-                            initDefaults(function (err, defaults) {
-                                if (err) {
-                                    waitForSettings.reject(err);
-                                }
-                                else {
-                                    $rootScope.records = defaults;
-                                    recordsInitialised = true;
-                                    checkForInitialisationCompletion();
-                                }
-                            })
-                        }
-
-                        if (err) {
-                            if (err.status == 404) {
-                                reset();
+            function watchRecords() {
+                $log.debug('watchRecords');
+                function receiveWatch(key, newValue, oldValue) {
+                    $log.debug('receiveWatch', key, newValue, oldValue);
+                    if (newValue !== oldValue) {
+                        var records = $rootScope.records;
+                        if (key == 'seconds') {
+                            var shouldSaveSeconds = !(newValue % 5);
+                            // Only write num. seconds in timer to disc every 5 seconds
+                            if (shouldSaveSeconds) {
+                                $log.debug('saving seconds down as multiple of 5');
+                                writeRecords(records);
                             }
                             else {
-                                waitForSettings.reject(err);
+                                $log.debug('not saving seconds down as isnt a multiple of 5');
                             }
                         }
                         else {
-                            var recordsUpToDate = doc.seconds !== undefined &&
-                                doc.currentRound !== undefined &&
-                                doc.completedRounds !== undefined &&
-                                doc.currentMode !== undefined;
-                            if (recordsUpToDate) {
-                                $rootScope.records = doc;
-                                recordsInitialised = true;
-                                checkForInitialisationCompletion();
-                            }
-                            else {
-                                $log.error('records incomplete, resetting', doc);
-                                reset();
-                            }
+                            writeRecords(records);
                         }
-                    });
-                }
-                else {
-                    waitForSettings.reject(err);
+                    }
                 }
 
-            })
+                for (var key in $rootScope.records) {
+                    if ($rootScope.records.hasOwnProperty(key)) {
+                        $rootScope.$watch(key, _.partial(receiveWatch, key));
+                    }
+                }
+            }
+
+            (function getSettings() {
+                Settings.getAll(function (err) {
+                    if (err) {
+                        waitForSettings.reject(err);
+                    }
+                    else {
+                        watchSettings();
+                        settingsInitialised = true;
+                        checkForInitialisationCompletion();
+                    }
+                });
+            })();
+
+            (function getRecords() {
+                lazyPouchDB.getPromise(function (err, pouch) {
+                    if (!err) {
+                        pouch.get('ctimerService', function (err, doc) {
+                            function reset() {
+                                initDefaults(function (err, defaults) {
+                                    if (err) {
+                                        waitForSettings.reject(err);
+                                    }
+                                    else {
+                                        $rootScope.records = defaults;
+                                        recordsInitialised = true;
+                                        checkForInitialisationCompletion();
+                                    }
+                                })
+                            }
+
+                            if (err) {
+                                if (err.status == 404) {
+                                    reset();
+                                    watchRecords();
+                                }
+                                else {
+                                    waitForSettings.reject(err);
+                                }
+                            }
+                            else {
+                                var recordsUpToDate = doc.seconds !== undefined &&
+                                    doc.currentRound !== undefined &&
+                                    doc.completedRounds !== undefined &&
+                                    doc.currentMode !== undefined;
+                                if (recordsUpToDate) {
+                                    $rootScope.records = doc;
+                                    recordsInitialised = true;
+                                    checkForInitialisationCompletion();
+
+                                }
+                                else {
+                                    $log.error('records incomplete, resetting', doc);
+                                    reset();
+
+                                }
+                                watchRecords();
+                            }
+                        });
+                    }
+                    else {
+                        waitForSettings.reject(err);
+                    }
+
+                })
+            })();
+
         }
 
         init();

@@ -493,6 +493,5 @@ describe('ctimer', function () {
 
         })
 
-
     });
 });

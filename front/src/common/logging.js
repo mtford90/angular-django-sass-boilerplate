@@ -1,7 +1,7 @@
 /**
  * A configurable logging service that wraps $log and can also intercept and log http requests.
  */
-angular.module('app.logging', [])
+angular.module('app.logging', ['ngCookies'])
 
     .constant('logLevels', {
         trace: 0,
