@@ -150,11 +150,11 @@ angular.module('app.settings')
         return {
             waitForLoad: waitForLoad,
             get: SettingsService.get,
-            set: function (key, value) {
+            set: function (key, value, callback) {
                 waitForLoad(function (err) {
                     if (!err) {
                         $rootScope.settings[key] = value;
-                        SettingsService.set(key, value);
+                        SettingsService.set(key, value, callback);
                     }
                     else {
 

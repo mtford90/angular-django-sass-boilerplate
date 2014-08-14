@@ -14,8 +14,6 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
 
         var token;
 
-
-
         $rootScope.records = {
             seconds: null,
             currentRound: null,
@@ -54,21 +52,19 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                     waitForSettings.reject(err);
                 }
                 else {
-                    $rootScope.$watch('settings.pomodoroLength', function (newValue, oldValue) {
-                        if (newValue !== oldValue) {
+                    (function watch() {
+                        var handlePomodoroSettingsChange = function (setting, newValue) {
+                            $log.debug('handlePomodoroSettingsChange', newValue);
+                            $log.debug(setting.toString() + ' has changed:', newValue);
+                            evaluateState();
+                        };
+                        _.each(['settings.pomodoroLength'], function (setting) {
+                            $log.debug('watching "' + setting + '"');
+                            $rootScope.$watch(setting, _.partial(handlePomodoroSettingsChange, setting));
+                            $log.debug('watched "' + setting + '"');
+                        });
 
-                        }
-                    });
-                    $rootScope.$watch('settings.pomodoroShortBreak', function (newValue, oldValue) {
-                        if (newValue !== oldValue) {
-
-                        }
-                    });
-                    $rootScope.$watch('settings.pomodoroLongBreak', function (newValue, oldValue) {
-                        if (newValue !== oldValue) {
-
-                        }
-                    });
+                    })();
                     settingsInitialised = true;
                     checkForInitialisationCompletion();
                 }
@@ -157,7 +153,7 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
             });
         }
 
-        function sessionFinished (mode) {
+        function sessionFinished(mode) {
             var sessionLength;
             if ($rootScope.records.currentMode == TimerMode.Pomodoro) {
                 sessionLength = $rootScope.settings.pomodoroLength;
@@ -172,15 +168,20 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                 throw 'Unknown mode:' + $rootScope.records.currentMode.toString();
             }
             var sessionLengthInSeconds = sessionLength * 60;
-            return sessionLengthInSeconds == $rootScope.records.seconds;
+            $log.debug('sessionFinished', {seconds: $rootScope.records.seconds, sessionLength: sessionLengthInSeconds, mode: $rootScope.records.currentMode});
+            return sessionLengthInSeconds <= $rootScope.records.seconds;
         }
 
-        function tick() {
-            $rootScope.records.seconds++;
-            // A "Session" refers to either a Pomodoro, Short Break or a Long Break.
+        /**
+         * Contract num. seconds on the clock against the Pomodoro variables
+         * and progress to next stage if neccessary.
+         */
+        function evaluateState() {
+            $log.debug('evaluateState');
             if (sessionFinished($rootScope.records.currentMode)) {
                 $rootScope.records.seconds = 0;
                 if ($rootScope.records.currentMode == TimerMode.Pomodoro) {
+                    $log.info('Pomodoro has finished');
                     $rootScope.records.currentRound++;
                     $rootScope.records.completedRounds++;
                     var pomodoroRounds = $rootScope.settings.pomodoroRounds;
@@ -193,14 +194,34 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                     }
                 }
                 else if ($rootScope.records.currentMode == TimerMode.LongBreak) {
+                    $log.info('Long break has finished');
                     $rootScope.records.currentMode = TimerMode.Pomodoro;
                 }
                 else if ($rootScope.records.currentMode == TimerMode.ShortBreak) {
+                    $log.info('Short break has finished');
                     $rootScope.records.currentMode = TimerMode.Pomodoro;
+                }
+                else {
+                    throw('No such mode:', $rootScope.records.currentMode);
                 }
 
             }
+            // e.g. on a settings change
+            else if ($rootScope.records.currentRound > $rootScope.settings.pomodoroRounds) {
+                $rootScope.records.currentMode = TimerMode.LongBreak;
+                $rootScope.records.seconds = 0;
+                $rootScope.records.currentRound = 1;
+            }
+            else {
+                $log.info('Nothing has finished');
+            }
             broadcastTick();
+        }
+
+        function tick() {
+            $rootScope.records.seconds++;
+            // A "Session" refers to either a Pomodoro, Short Break or a Long Break.
+            evaluateState();
         }
 
         return {
@@ -239,6 +260,7 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                 waitForSettings.promise.then(function () {
                     $log.debug('set2');
                     $rootScope.records.seconds = seconds;
+                    evaluateState();
                     if (callback) callback();
                 }, function (err) {
                     if (callback) callback(err);
@@ -253,7 +275,7 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                     if (callback) callback(err);
                 });
             },
-            isTicking : function (isTicking) {
+            isTicking: function (isTicking) {
                 return token !== null && token !== undefined;
             },
             // START: For testing purposes
