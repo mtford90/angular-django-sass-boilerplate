@@ -32,7 +32,42 @@ describe('ctimer', function () {
 
     });
 
-    it.only('no hours', function (done) {
+    it.only('hours, minutes and seconds', function (done) {
+        Settings.set('pomodoroLength', 70, function (err) {
+            if (err) done(err);
+            ctimerService._inject({
+                seconds: 50,
+                currentRound: 1,
+                currentMode: TimerMode.Pomodoro,
+                completedRounds: 0
+            }, function (err) {
+                if (err) done(err);
+                ctimerService.resume(function (err) {
+                    if (err) done(err);
+                    $rootScope.$digest();
+                    $rootScope.$on('tick', function (e, payload) {
+                        var scope = $rootScope.$new();
+                        var element = '<div ctimerd></div>';
+                        element = $compile(element)(scope);
+                        scope.$digest();
+                        console.log('element:',element);
+                        try {
+                            assert.equal('01', element.find('.hours').text());
+                            assert.equal('09', element.find('.minutes').text());
+                            assert.equal('09', element.find('.seconds').text());
+                            done();
+                        }
+                        catch (err) {
+                            done(err);
+                        }
+
+                    });
+                });
+            });
+        });
+    });
+
+    it('minutes and seconds', function (done) {
         ctimerService._inject({
             seconds: 50,
             currentRound: 1,
@@ -50,6 +85,7 @@ describe('ctimer', function () {
                     scope.$digest();
                     console.log('element:',element);
                     try {
+                        assert.notOk(element.find('.hours').length);
                         assert.equal(24, parseInt(element.find('.minutes').text(), 10));
                         assert.equal('09', element.find('.seconds').text());
                         done();
@@ -63,6 +99,39 @@ describe('ctimer', function () {
         });
     });
 
-    
+
+    it('seconds', function (done) {
+        ctimerService._inject({
+            seconds: (24 * 60) + 30,
+            currentRound: 1,
+            currentMode: TimerMode.Pomodoro,
+            completedRounds: 0
+        }, function (err) {
+            if (err) done(err);
+            ctimerService.resume(function (err) {
+                if (err) done(err);
+                $rootScope.$digest();
+                $rootScope.$on('tick', function (e, payload) {
+                    var scope = $rootScope.$new();
+                    var element = '<div ctimerd></div>';
+                    element = $compile(element)(scope);
+                    scope.$digest();
+                    console.log('element:',element);
+                    try {
+                        assert.notOk(element.find('.hours').length);
+                        assert.equal('00', element.find('.minutes').text());
+                        assert.equal('29', element.find('.seconds').text());
+                        done();
+                    }
+                    catch (err) {
+                        done(err);
+                    }
+
+                });
+            });
+        });
+    });
+
+
 
 });

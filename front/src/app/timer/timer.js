@@ -6,6 +6,12 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
         LongBreak: 3
     })
 
+    .directive('timerWithControls', function (jlog, $rootScope) {
+
+
+
+    })
+
     .directive('ctimerd', function ($rootScope, jlog, TimerMode, ctimerService) {
 
         var $log = jlog.loggerWithName('ctimerdirective');
@@ -44,8 +50,8 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                         var secondsRemaining = sessionLength - currSeconds;
                         $log.debug('secondsRemaining', secondsRemaining);
                         var seconds = Math.floor(secondsRemaining % 60);
-                        var minutes = Math.floor(secondsRemaining / 60 % 60);
-                        var hours = Math.floor(minutes / 60);
+                        var minutes = Math.floor((secondsRemaining / 60) % 60);
+                        var hours = Math.floor((secondsRemaining / 60) / 60 % 60);
                         scope.hours = hours;
                         scope.minutes = minutes;
                         scope.seconds = seconds;
