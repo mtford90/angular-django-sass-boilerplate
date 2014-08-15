@@ -12,7 +12,8 @@ angular.module('app', [
     'ui.router',
     'ui.bootstrap',
     'ngResource',
-    'ngCookies'
+    'ngCookies',
+    'ctimer'
 ])
 
     .config(function myAppConfig($stateProvider, $urlRouterProvider) {

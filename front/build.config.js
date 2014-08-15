@@ -39,6 +39,7 @@ module.exports = {
     test_files: {
         js: [
             'vendor/angular-mocks/angular-mocks.js',
+            'node_modules/sinon/pkg/sinon.js',
             'src/test-lib.js'
         ]
     },

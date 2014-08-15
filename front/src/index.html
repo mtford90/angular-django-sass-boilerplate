@@ -78,12 +78,7 @@
 
                     </div>
                     <div class="user pull-right">
-                        <timer interval="1000" style="font-family: Inconsolata">
-                            <span ng-if="hhours">
-                                {{hhours}}:
-                            </span>
-                            {{mminutes}}:{{sseconds}}
-                        </timer>
+                        <timer-with-controls></timer-with-controls>
                     </div>
                 </div>
             </div>

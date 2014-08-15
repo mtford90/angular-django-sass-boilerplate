@@ -6,10 +6,25 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
         LongBreak: 3
     })
 
-    .directive('timerWithControls', function (jlog, $rootScope) {
-
-
-
+    .directive('timerWithControls', function (jlog, $rootScope, ctimerService) {
+        return {
+            restrict: 'AE',
+            template: '<span class="pomodoro-timer-with-controls">' +
+                '<ctimerd></ctimerd>' +
+                '<i class="fa play-or-pause-button" ng-click="playOrPause()" ng-class="{\'fa-play\': !isPlaying(), \'fa-pause\': isPlaying()}"></i>' +
+                '</span>',
+            controller: function ($scope) {
+                $scope.isPlaying = ctimerService.isTicking;
+                $scope.playOrPause = function (callback) {
+                    if ($scope.isPlaying()) {
+                        ctimerService.pause(callback);
+                    }
+                    else {
+                        ctimerService.resume(callback);
+                    }
+                }
+            }
+        }
     })
 
     .directive('ctimerd', function ($rootScope, jlog, TimerMode, ctimerService) {
@@ -17,33 +32,33 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
         var $log = jlog.loggerWithName('ctimerdirective');
 
         return {
-            restrict: 'A',
+            restrict: 'AE',
             template: '<span class="pomodoro-timer">' +
                 '<span class="hours" ng-if="hours">{{pad(hours)}}</span><span ng-if="hours">:</span>' +
                 '<span class="minutes" ng-if="minutes !== null">{{pad(minutes)}}</span>:' +
                 '<span class="seconds" ng-if="seconds !== null">{{pad(seconds)}}</span>' +
                 '</span>',
             scope: true,
-            link: function (scope, iElement, iAttrs) {
+            controller: function ($scope) {
                 function configureScope() {
                     $log.debug('configureScope');
                     var sessionLength;
-                    if (scope.records.currentMode == TimerMode.Pomodoro) {
-                        sessionLength = scope.settings.pomodoroLength;
+                    if ($scope.records.currentMode == TimerMode.Pomodoro) {
+                        sessionLength = $scope.settings.pomodoroLength;
                     }
-                    else if (scope.records.currentMode == TimerMode.ShortBreak) {
-                        sessionLength = scope.settings.pomodoroShortBreak;
+                    else if ($scope.records.currentMode == TimerMode.ShortBreak) {
+                        sessionLength = $scope.settings.pomodoroShortBreak;
                     }
-                    else if (scope.records.currentMode == TimerMode.LongBreak) {
-                        sessionLength = scope.settings.pomodoroLongBreak;
+                    else if ($scope.records.currentMode == TimerMode.LongBreak) {
+                        sessionLength = $scope.settings.pomodoroLongBreak;
                     }
                     else {
-                        $log.error('Unknown timer mode:', scope.records.currentMode);
-                        scope.err = 'Unknown timer mode';
+                        $log.error('Unknown timer mode:', $scope.records.currentMode);
+                        $scope.err = 'Unknown timer mode';
                         return;
                     }
                     sessionLength = sessionLength * 60; // sessionLength is stored in minutes
-                    var currSeconds = scope.records.seconds;
+                    var currSeconds = $scope.records.seconds;
                     if (!isNaN(currSeconds)) {
                         $log.debug('sessionLength', sessionLength);
                         $log.debug('currSeconds', currSeconds);
@@ -52,9 +67,10 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                         var seconds = Math.floor(secondsRemaining % 60);
                         var minutes = Math.floor((secondsRemaining / 60) % 60);
                         var hours = Math.floor((secondsRemaining / 60) / 60 % 60);
-                        scope.hours = hours;
-                        scope.minutes = minutes;
-                        scope.seconds = seconds;
+                            $scope.hours = hours;
+                            $scope.minutes = minutes;
+                            $scope.seconds = seconds;
+
                         $log.debug('computed time:', {
                             hours: hours,
                             minutes: minutes,
@@ -66,17 +82,19 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                     }
 
                 }
-                scope.hours = null;
-                scope.minutes = null;
-                scope.seconds = null;
+                $scope.hours = null;
+                $scope.minutes = null;
+                $scope.seconds = null;
                 configureScope();
                 $log.debug('waiting for ctimerService to load before initialising timer directive');
                 ctimerService.get(function (err, records) { // Ensure that timer has finisehd loading.
                     if (!err) {
                         $log.debug('ctimerService has loaded', {err: err, records: records});
-
                         configureScope();
-                        $rootScope.$on('tick', configureScope());
+                        $scope.$watch('records.seconds', function () {
+                            $log.debug('recieved tick from $rootscope');
+                            configureScope();
+                        });
                     }
                     else {
                         $log.error('cannot load ctimer directive as ctimerService failed', {err: err});
@@ -84,17 +102,18 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
 
                 });
 
-                scope.pad = function (n) {
+                $scope.pad = function (n) {
                     return ("00" + n).substr(-2,2);
                 }
-
-
-
             }
+
         }
     })
 
-    .factory('ctimerService', function ($rootScope, Settings, $q, jlog, localStorageService, lazyPouchDB, TimerMode) {
+    // Save down num. seconds in current session to disk every SECONDS_DIVISOR seconds.
+    .constant('SECONDS_DIVISOR', 2)
+
+    .factory('ctimerService', function ($rootScope, Settings, $q, jlog, localStorageService, lazyPouchDB, TimerMode, SECONDS_DIVISOR) {
 
         var waitForSettings = $q.defer();
 
@@ -110,7 +129,8 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
         };
 
         function writeRecords(records, callback) {
-            $log.debug('writeRecords');
+            records._id = 'ctimerService';
+            $log.debug('writeRecords', records);
             lazyPouchDB.retryUntilWritten(records).then(function (resp) {
                 $log.debug('Successfully pushed timer records to disk');
                 if (callback) callback(null, resp);
@@ -137,7 +157,7 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
 
             function checkForInitialisationCompletion() {
                 var done = settingsInitialised && recordsInitialised;
-                $log.debug('checkForInitialisationCompletion:', done);
+                $log.debug('checkForInitialisationCompletion:', {done: done});
                 if (done) {
                     waitForSettings.resolve();
                 }
@@ -159,18 +179,18 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
             function watchRecords() {
                 $log.debug('watchRecords');
                 function receiveWatch(key, newValue, oldValue) {
-                    $log.debug('receiveWatch', key, newValue, oldValue);
+                    $log.debug('receiveWatch', {key: key, newValue: newValue, oldValue: oldValue});
                     if (newValue !== oldValue) {
                         var records = $rootScope.records;
                         if (key == 'seconds') {
-                            var shouldSaveSeconds = !(newValue % 5);
-                            // Only write num. seconds in timer to disc every 5 seconds
+                            var shouldSaveSeconds = !(newValue % SECONDS_DIVISOR);
+                            // Avoid writing down records every tick.
                             if (shouldSaveSeconds) {
-                                $log.debug('saving seconds down as multiple of 5');
+                                $log.debug('receiveWatch: saving seconds down as multiple of ' + SECONDS_DIVISOR.toString());
                                 writeRecords(records);
                             }
                             else {
-                                $log.debug('not saving seconds down as isnt a multiple of 5');
+                                $log.debug('receiveWatch: not saving seconds down as isnt a multiple of ' + SECONDS_DIVISOR.toString());
                             }
                         }
                         else {
@@ -179,11 +199,10 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
                     }
                 }
 
-                for (var key in $rootScope.records) {
-                    if ($rootScope.records.hasOwnProperty(key)) {
-                        $rootScope.$watch(key, _.partial(receiveWatch, key));
-                    }
-                }
+                _.each(['seconds', 'currentRound', 'completedRounds', 'currentMode'], function (key) {
+                    $log.debug('watchRecords - watching ' + key);
+                    $rootScope.$watch('records.' + key, _.partial(receiveWatch, key));
+                });
             }
 
             (function getSettings() {
@@ -354,7 +373,7 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
         }
 
         function tick() {
-            $rootScope.records.seconds++;
+            $rootScope.records.seconds += 1;
             // A "Session" refers to either a Pomodoro, Short Break or a Long Break.
             evaluateState();
         }
@@ -384,7 +403,12 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
             },
             resume: function (callback) {
                 waitForSettings.promise.then(function () {
-                    token = setInterval(tick, 1000);
+                    token = setInterval(function () {
+                        tick();
+                        // setInterval is outside of angular's $digest cycle therefore must
+                        // force the digest after each tick.
+                        $rootScope.$apply();
+                    }, 1000);
                     if (callback) callback();
                 }, function (err) {
                     if (callback) callback(err);

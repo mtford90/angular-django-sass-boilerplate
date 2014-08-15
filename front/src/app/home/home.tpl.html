@@ -1,15 +1,7 @@
 <div class="text-center row">
     <div id="timer">
         <div id="clock" style="font-family: Inconsolata">
-            <span ng-if="timer.hours">
-                {{pad(timer.hours)}}:
-            </span>
-            {{pad(timer.minutes)}}:{{pad(timer.seconds)}}
-        </div>
-        <div>
-            <button ng-click="startTimer()" >Reset Timer</button>
-            <button ng-click="resumeTimer()" >Resume Timer</button>
-            <button ng-click="stopTimer()">Stop Timer</button>
+            <timer-with-controls></timer-with-controls>
         </div>
         <div>
             Task #1 Tick
