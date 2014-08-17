@@ -133,6 +133,7 @@ angular.module('ctimer', ['LocalStorageModule', 'app.settings', 'app.logging'])
             $log.debug('writeRecords', records);
             lazyPouchDB.retryUntilWritten(records).then(function (resp) {
                 $log.debug('Successfully pushed timer records to disk');
+
                 if (callback) callback(null, resp);
             }, function (err) {
                 $log.error('error writing timer records down to disk', err);

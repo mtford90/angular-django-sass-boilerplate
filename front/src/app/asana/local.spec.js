@@ -285,6 +285,43 @@ describe('app.asana.data', function () {
             }, done);
         });
 
+        describe.only('completion', function () {
+            it('using object', function (done) {
+                AsanaLocal.addTasks([
+                    {id: '5', name: 'a task'}
+                ]).then(function success(tasks) {
+                    var task = tasks[0];
+                    AsanaLocal.completeTask(task, function (err, task) {
+                        if (err) {
+                            done(err);
+                        }
+                        else {
+                            assert.ok(task.completed);
+                            console.log('task completed', {err: err, task: task});
+                            done();
+                        }
+                    });
+                }, done);
+            });
+            it('using object', function (done) {
+                AsanaLocal.addTasks([
+                    {id: '5', name: 'a task'}
+                ]).then(function success(tasks) {
+                    var task = tasks[0];
+                    AsanaLocal.completeTask(task._id, function (err, task) {
+                        if (err) {
+                            done(err);
+                        }
+                        else {
+                            assert.ok(task.completed);
+                            console.log('task completed', {err: err, task: task});
+                            done();
+                        }
+                    });
+                }, done);
+            });
+        });
+
     });
 
 });

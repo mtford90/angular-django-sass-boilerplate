@@ -12,10 +12,12 @@ module.exports = function ( karma ) {
       'node_modules/es5-shim/es5-shim.min.js', // Otherwise PouchDB doesn't work.
       'node_modules/q/q.js', // For mocking $q
       'karma/test-global.js',
-        'vendor/angular-mocks/angular-mocks.js',
       <% scripts.forEach( function ( file ) { %>'<%= file %>',
       <% }); %>
-      'src/**/*.js'
+      'vendor/angular-mocks/angular-mocks.js',
+
+      'src/**/*.js',
+
     ],
     exclude: [
       'src/assets/**/*.js',

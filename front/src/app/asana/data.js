@@ -220,7 +220,10 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular', 'pouch
             reset: reset,
             getTasks: getTasks,
             clearActiveUser: AsanaLocal.clearActiveUser,
-            getUser: getUser
+            getUser: getUser,
+            completeTask: function (task, callback) {
+
+            }
         };
     })
 
