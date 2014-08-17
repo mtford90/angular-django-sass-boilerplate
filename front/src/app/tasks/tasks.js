@@ -126,125 +126,7 @@ angular.module('app.tasks', [
 
         var $log = jlog.loggerWithName('TasksCtrl');
 
-        var $parentScope = $scope.$parent;
 
-        function configureScope(loading) {
-            loading = loading === undefined ? true : loading;
-            $parentScope.tasks = {
-                error: null,
-                workspaces: null,
-                loading: loading,
-                selectedWorkspace: null,
-                tasks: [],
-                loadingTasks: loading
-            };
-        }
-
-        $scope.asanaIsEnabled = function () {
-            if ($rootScope.settings.asanaApiKey) {
-                return $rootScope.settings.asanaApiKey.trim().length > 0;
-            }
-            return false;
-        };
-
-        function disableAsana() {
-            configureScope(false);
-            $parentScope.tasks.error = 'No API key present';
-        }
-
-        function getWorkspaces() {
-            $log.debug('getWorkspaces');
-            $parentScope.tasks.loading = true;
-            if ($scope.asanaIsEnabled()) {
-                $log.debug('Asana is enabled');
-                AsanaData.getUser(function (err, user) {
-                    configureScope();
-                    if (err) {
-                        $parentScope.tasks.loading = false;
-                        $parentScope.tasks.error = err;
-                    }
-                    else {
-                        $log.info('got user', user);
-                        var workspaces = user.workspaces;
-                        $log.info('got workspaces:', workspaces);
-                        $parentScope.tasks.loading = false;
-                        $parentScope.tasks.workspaces = workspaces;
-                        $parentScope.tasks.selectedWorkspace = workspaces.length ? workspaces[0] : null;
-                    }
-                });
-            }
-            else {
-                disableAsana();
-            }
-        }
-
-        function getAsanaTasks(workspace) {
-            $parentScope.tasks.loadingTasks = true;
-            $parentScope.tasks.tasks = [];
-            var id;
-            if (workspace.id) {
-                id = workspace.id;
-            }
-            else {
-                id = workspace;
-            }
-            AsanaData.getTasks(id, function (err, tasks) {
-                if (err) {
-                    $log.warn('unable to get tasks:', err);
-                }
-                else {
-                    $log.info('got tasks:', tasks);
-                    $parentScope.tasks.tasks = tasks;
-                }
-                $parentScope.tasks.loadingTasks = false;
-            });
-        }
-
-        function watch() {
-            $rootScope.$watch('settings.asanaApiKey', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    if (newValue.trim().length) {
-                        getWorkspaces();
-                    }
-                }
-            });
-            $parentScope.$watch('tasks.selectedWorkspace', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    if (newValue) {
-                        $log.debug('getting tasks');
-                        getAsanaTasks(newValue);
-                    }
-                }
-            });
-        }
-
-
-        if (!$parentScope.tasks) {
-            $log.debug('initialising tasks for first time');
-            configureScope();
-            Settings.getAll(function (err, settings) {
-                if (err) {
-                    $log.error('error getting settings:', err);
-                    // TODO: Handle fatal error.
-                }
-                else {
-                    $log.debug('got settings:', settings);
-                    if (settings.asanaApiKey) {
-                        if (settings.asanaApiKey.trim().length) {
-                            getWorkspaces();
-                        }
-                    }
-                    else {
-                        disableAsana();
-                    }
-                    watch();
-                }
-            });
-        }
-        else {
-            $log.debug('tasks already initialised');
-            watch();
-        }
 
         $scope.activateTask = function (task) {
             ActiveTasks.activateTask(task._id, function (err, task) {
@@ -252,7 +134,7 @@ angular.module('app.tasks', [
                     $log.error('error activating task:', err);
                 }
             });
-            var asanaTasks = $parentScope.tasks.tasks;
+            var asanaTasks = $scope.tasks.tasks;
             var index = asanaTasks.indexOf(task);
             asanaTasks.splice(index, 1);
         };
@@ -263,11 +145,11 @@ angular.module('app.tasks', [
                     $log.error('error deactivating task:', err);
                 }
             });
-            var selectedWorkspaceId = $parentScope.tasks.selectedWorkspace ? $parentScope.tasks.selectedWorkspace.id : null;
+            var selectedWorkspaceId = $scope.tasks.selectedWorkspace ? $scope.tasks.selectedWorkspace.id : null;
 
-            var activeTasks = $parentScope.activeTasks.activeTasks;
+            var activeTasks = $scope.activeTasks.activeTasks;
             $log.debug('activeTasks', activeTasks);
-            var asanaTasks = $parentScope.tasks.tasks;
+            var asanaTasks = $scope.tasks.tasks;
             var index = activeTasks.indexOf(task);
             activeTasks.splice(index, 1);
             if (task.workspaceId == selectedWorkspaceId) {

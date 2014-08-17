@@ -33,7 +33,7 @@ describe('ctimer', function () {
 
     describe('timer without controls', function () {
         beforeEach(reset);
-        it.only('hours, minutes and seconds', function (done) {
+        it('hours, minutes and seconds', function (done) {
             Settings.set('pomodoroLength', 70, function (err) {
                 if (err) done(err);
                 ctimerService._inject({
@@ -246,11 +246,7 @@ describe('ctimer', function () {
                         done(err);
                     }
                 });
-
-
             });
         });
-
     });
-
 });

@@ -12,7 +12,7 @@ angular.module('app.logging', ['ngCookies'])
         error: 4
     })
 
-    .constant('LOG_HEADERS', false)
+    .constant('LOG_HEADERS', true)
 
     .factory('jlogConfig', function (logLevels) {
         var ll = {

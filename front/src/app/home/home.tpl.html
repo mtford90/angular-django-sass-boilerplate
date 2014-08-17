@@ -3,19 +3,34 @@
         <div id="clock" style="font-family: Inconsolata">
             <timer-with-controls></timer-with-controls>
         </div>
+    </div>
+</div>
+<div id="current-task">
+    <div ng-if="tasks.tasks.length">
+        {{tasks.tasks[0]}}
+    </div>
+    <div ng-if="!tasks.tasks.length">
+        No tasks.
+    </div>
+</div>
+<div class="pomodoro-stats">
+    <div>
         <div>
-            Task #1 Tick
+            {{records.currentRound}}/{{settings.pomodoroRounds}}
         </div>
         <div>
-            Task #2
-        </div>
-        <div>
-            Task #3
-        </div>
-        <div>
-            You haven't added any tasks to complete.
+            Current Round
         </div>
     </div>
+    <div>
+        <div>
+            {{records.completedRounds}}/{{settings.pomodoroGoal}}
+        </div>
+        <div>
+            Goal
+        </div>
+    </div>
+
 </div>
 
 <!--<div class="row stat">-->

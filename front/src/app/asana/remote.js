@@ -38,6 +38,7 @@ angular.module('app.asana.data')
  * stored in PouchDB.
  */
     .factory('DeRectangularize', function () {
+
         /**
          * Given rectangularized tags, produce an array of JSON-compatible objects that can be stored
          * in PouchDB.
@@ -89,22 +90,28 @@ angular.module('app.asana.data')
 
 
 // A set of stored procedures that hit the remote Asana API.
-    .factory('AsanaRemote', function ($q, $log, Validate, DeRectangularize, AsanaRestangular) {
+    .factory('AsanaRemote', function ($q, jlog, Validate, DeRectangularize, AsanaRestangular) {
 
-        function getUser() {
-            $log.debug('getUser');
+        var $log = jlog.loggerWithName('AsanaRemote');
+
+        function getUser(callback) {
             var deferred = $q.defer();
+            $log.debug('getUser1');
             AsanaRestangular.one('users', 'me').get().then(function success(user) {
+                $log.debug('getUser', user);
                 var err = Validate.User(user);
                 if (err) {
+                    if (callback) callback(err);
                     deferred.reject(err);
                 }
                 else {
                     var processedUser = DeRectangularize.User(user);
+                    if (callback) callback(null, processedUser);
                     deferred.resolve(processedUser);
                 }
             }, function (err) {
                 $log.error('Error getting user:', err);
+                if (callback) callback(err);
                 deferred.reject(err);
             });
             return deferred.promise;
@@ -145,15 +152,20 @@ angular.module('app.asana.data')
          */
         function processTasks(tasks) {
             var deferred = $q.defer();
-            getTags(tasks).then(function (tasks) {
-                var processedTasks = [];
-                for (var i = 0; i < tasks.length; i++) {
-                    var task = tasks[i];
-                    var processedTask = DeRectangularize.Task(task);
-                    processedTasks.push(processedTask);
-                }
-                deferred.resolve(processedTasks);
-            }, deferred.reject);
+            if (tasks.length) {
+                getTags(tasks).then(function (tasks) {
+                    var processedTasks = [];
+                    for (var i = 0; i < tasks.length; i++) {
+                        var task = tasks[i];
+                        var processedTask = DeRectangularize.Task(task);
+                        processedTasks.push(processedTask);
+                    }
+                    deferred.resolve(processedTasks);
+                }, deferred.reject);
+            }
+            else {
+                deferred.resolve(tasks);
+            }
             return deferred.promise;
         }
 
@@ -163,7 +175,7 @@ angular.module('app.asana.data')
          * @param workspaceId
          * @returns promise
          */
-        function getTasks(workspaceId) {
+        function getTasks(workspaceId, callback) {
             var deferred = $q.defer();
             var queryParams = {
                 assignee: 'me', // Only return tasks assigned to the user.
@@ -175,22 +187,61 @@ angular.module('app.asana.data')
                     $log.debug('Got tasks and now going to process them:', tasks);
                     processTasks(tasks).then(function (processedTasks) {
                         $log.debug('Successfully got tasks:', processedTasks);
+                        if (callback) callback(null, processedTasks);
                         deferred.resolve(processedTasks);
                     }, function (err) {
                         $log.debug('Error processing tasks:', err);
+                        if (callback) callback(err);
                         deferred.reject(err);
                     });
                 }
                 else {
+                    if (callback) callback(null, []);
                     deferred.resolve([]);
                 }
-            }, deferred.reject);
+            }, function (err) {
+                if (callback) callback(err);
+                deferred.reject(err);
+            });
             return deferred.promise;
+        }
+
+        function getProjects(callback) {
+            AsanaRestangular.all('projects').getList().then(function success(projects) {
+                callback(null, projects);
+            }, callback);
+        }
+
+        function createTask(task, callback) {
+            $log.debug('createTask', task);
+            AsanaRestangular.all('tasks').post({data: task}).then(function (resp) {
+                callback(null, DeRectangularize.Task(resp));
+            }, function (err) {
+                if (callback) callback(err);
+            });
+        }
+
+        function deleteTask(task, callback) {
+            AsanaRestangular.one('tasks', task.id).remove().then(function (resp) {
+                callback(null, resp);
+            }, callback);
+        }
+
+        function completeTask(task, callback) {
+            var t = AsanaRestangular.all('tasks').one(task.id.toString());
+            t.data = {completed: true};
+            t.put().then(function () {
+                callback(null);
+            }, callback);
         }
 
         return {
             getUser: getUser,
-            getTasks: getTasks
+            getProjects: getProjects,
+            getTasks: getTasks,
+            createTask: createTask,
+            completeTask: completeTask,
+            deleteTask: deleteTask
         };
     })
 

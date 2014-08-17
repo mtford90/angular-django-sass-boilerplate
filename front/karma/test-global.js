@@ -3,13 +3,13 @@
  * @param done
  * @returns {Function}
  */
-function mochaError (done) {
+function mochaError(done) {
     return function (err) {
         done(new Error(err));
     }
 }
 
-function waterfallError (done, err) {
+function waterfallError(done, err) {
     console.error('waterFallError:', err);
     var mochaError;
     if (err) {
@@ -31,13 +31,22 @@ var guid = (function () {
     };
 })();
 
-function clearStorage() {
+function clearStorage(callback) {
+    console.log('clearStorage');
     var deferred = Q.defer();
     inject(function (_lazyPouchDB_, localStorageService) {
         localStorageService.clearAll();
-        _lazyPouchDB_.inject(new PouchDB(guid())).then(function () {
+        var dbName = guid();
+        console.log('injecting PouchDB instance with name ' + dbName);
+        _lazyPouchDB_.inject(new PouchDB(dbName)).then(function () {
+            console.log('injected pouchDB instance successfully');
+            if (callback) callback();
             deferred.resolve();
-        }, deferred.reject);
+        }, function (err) {
+            console.error('error installing pouch', err);
+            if (callback) callback(err);
+            deferred.reject(err);
+        });
     });
     return deferred.promise;
 }

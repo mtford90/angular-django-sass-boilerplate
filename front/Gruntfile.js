@@ -327,18 +327,23 @@ module.exports = function (grunt) {
          * The Karma configurations.
          */
         karma: {
-            options: {
-                configFile: '<%= build_dir %>/karma-unit.js'
-            },
             unit: {
+                configFile: '<%= build_dir %>/karma-unit.js',
                 port: 9019,
                 background: true
             },
             continuous: {
+                configFile: '<%= build_dir %>/karma-unit.js',
                 singleRun: true
             },
-            dev: {
-                port: 9019
+            'int-continuous': {
+                configFile: '<%= build_dir %>/karma-int.js',
+                singleRun: true
+            },
+            int: {
+                configFile: '<%= build_dir %>/karma-int.js',
+                port: 9019,
+                background: true
             }
         },
 
@@ -547,7 +552,7 @@ module.exports = function (grunt) {
                     collapseWhitespace: true
                 },
                 files: {
-                    '<%= compile_dir %>/index.html':  '<%= compile_dir %>/index.html'
+                    '<%= compile_dir %>/index.html': '<%= compile_dir %>/index.html'
                 }
             }
         }
@@ -565,6 +570,7 @@ module.exports = function (grunt) {
      */
     grunt.renameTask('watch', 'delta');
     grunt.registerTask('watch', [ 'build', 'karma:unit', 'delta' ]);
+    grunt.registerTask('watchi', [ 'integration', 'karma:int', 'delta' ]);
 
 
     /**
@@ -605,7 +611,6 @@ module.exports = function (grunt) {
     ]);
 
 
-
     /**
      * The `compile` task gets your app ready for deployment by concatenating and
      * minifying your code.
@@ -621,6 +626,11 @@ module.exports = function (grunt) {
         'uglify',
         'index:compile',
         'htmlmin'
+    ]);
+
+    grunt.registerTask('integration', [
+        'build-no-test',
+        'karma:int'
     ]);
 
     /**
@@ -676,15 +686,18 @@ module.exports = function (grunt) {
      */
     grunt.registerMultiTask('karmaconfig', 'Process karma config templates', function () {
         var jsFiles = filterForJS(this.filesSrc);
-
+        var process = function (contents, path) {
+            return grunt.template.process(contents, {
+                data: {
+                    scripts: jsFiles
+                }
+            });
+        };
         grunt.file.copy('karma/karma-unit.tpl.js', grunt.config('build_dir') + '/karma-unit.js', {
-            process: function (contents, path) {
-                return grunt.template.process(contents, {
-                    data: {
-                        scripts: jsFiles
-                    }
-                });
-            }
+            process: process
+        });
+        grunt.file.copy('karma/karma-int.tpl.js', grunt.config('build_dir') + '/karma-int.js', {
+            process: process
         });
     });
 

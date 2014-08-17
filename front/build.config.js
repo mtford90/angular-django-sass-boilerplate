@@ -20,7 +20,7 @@ module.exports = {
      * app's unit tests.
      */
     app_files: {
-        js: [ 'src/**/*.js', '!src/**/*.spec.js', '!src/assets/**/*.js' ],
+        js: [ 'src/**/*.js', '!src/**/*.spec.js', '!src/assets/**/*.js'],
         jsunit: [ 'src/**/*.spec.js' ],
 
         coffee: [ 'src/**/*.coffee', '!src/**/*.spec.coffee' ],
@@ -38,7 +38,6 @@ module.exports = {
      */
     test_files: {
         js: [
-            'vendor/angular-mocks/angular-mocks.js',
             'node_modules/sinon/pkg/sinon.js',
             'src/test-lib.js'
         ]

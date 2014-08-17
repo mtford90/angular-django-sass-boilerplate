@@ -12,11 +12,12 @@
             </div>
             <div class="widget-body" ng-if="!activeTasks.loadingActiveTasks">
                 <div class="task"
-                     ng-repeat="task in activeTasks.activeTasks" >
+                     ng-repeat="task in activeTasks.activeTasks">
                     <!--{{task}}-->
                     <span class="title">{{task.name}}</span>
                     <span ng-if="task.project" class="tag">{{task.project}}</span>
                     <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
+
                     <div class="btn btn-default" ng-click="deactivateTask(task)">Remove</div>
                 </div>
             </div>
@@ -50,13 +51,19 @@
                 <loading></loading>
             </div>
             <div class="widget-body" ng-if="!tasks.loadingTasks || tasks.error">
-                <div class="row task"
-                     ng-repeat="task in tasks.tasks">
-                    <span class="index">{{$index+1}}</span>
-                    <span class="title">{{task.name}}</span>
-                    <span ng-if="task.project" class="tag">{{task.project}}</span>
-                    <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
-                    <div class="btn btn-default" ng-click="activateTask(task)">Add</div>
+                <div ng-if="tasks.tasks.length">
+                    <div class="row task"
+                         ng-repeat="task in tasks.tasks">
+                        <span class="index">{{$index+1}}</span>
+                        <span class="title">{{task.name}}</span>
+                        <span ng-if="task.project" class="tag">{{task.project}}</span>
+                        <span ng-repeat="tag in task.tags" class="tag">{{tag.name}}</span>
+
+                        <div class="btn btn-default" ng-click="activateTask(task)">Add</div>
+                    </div>
+                </div>
+                <div ng-if="!tasks.tasks.length" class="message">
+                    No tasks have been assigned to you in this workspace.
                 </div>
             </div>
         </div>

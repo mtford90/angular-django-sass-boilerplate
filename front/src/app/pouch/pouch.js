@@ -60,32 +60,31 @@ angular.module('pouch', [])
         this.INDEXES = INDEXES;
 
         this.$get = function ($q, $log) {
-            console.log('$get');
             var pouch = null;
             var deferred = $q.defer();
+
             /**
              * Takes a couchdb design doc and inserts this into the database.
              * @param index
              * @param name
              * @returns promise
              * @private
+             * @param callback
              */
-            function __installIndex(index, name) {
+            function __installIndex(index, name, callback) {
                 $log.debug('installing index:', index, name);
-                var deferredInstallationOfIndex = $q.defer();
                 pouch.put(index).then(function (resp) {
-                    deferredInstallationOfIndex.resolve(resp);
+                    if (callback) callback(null, resp);
                 }, function (err) {
                     if (err.status == 409) { // Already exists.
                         $log.debug('index ' + name + ' already exists, therefore ignoring');
-                        deferredInstallationOfIndex.resolve(index);
+                        if (callback) callback(null);
                     }
                     else {
                         $log.error('error installing index ' + name, err);
-                        deferredInstallationOfIndex.reject(err);
+                        if (callback) callback(err);
                     }
                 });
-                return deferredInstallationOfIndex.promise;
             }
 
             /**
@@ -97,20 +96,22 @@ angular.module('pouch', [])
              * @param map a couchdb/puchdb map function
              * @param reduce a couchdb/puchdb reduce function
              * @returns promise a promise to install the new index
+             * @param callback
              */
-            function installIndex(name, map, reduce) {
+            function installIndex(name, map, reduce, callback) {
                 var views = {};
                 views[name] = {map: map.toString()};
                 if (reduce) {
                     views[name].reduce = reduce.toString();
                 }
-                return __installIndex({
+                __installIndex({
                     _id: '_design/' + name,
                     views: views
-                }, name);
+                }, name, callback);
             }
 
             function _initialisePouchDB() {
+                $log.debug('_initialisePouchDB');
                 var indexesInstalled = 0;
                 var errors = [];
                 var numIndexes = 0;
@@ -135,20 +136,23 @@ angular.module('pouch', [])
                         }
                     }
                 }
-
-                var onSuccess = function () {
-                    indexesInstalled++;
-                    checkFinished();
-                };
-                var onFail = function (err) {
-                    errors.push(err);
-                    checkFinished();
+                var completion = function (err) {
+                    if (err) {
+                        $log.debug('onFail', {err: err});
+                        errors.push(err);
+                        checkFinished();
+                    }
+                    else {
+                        $log.debug('onSuccess');
+                        indexesInstalled++;
+                        checkFinished();
+                    }
                 };
                 $log.info('There are ' + numIndexes + ' indexes to install');
                 for (var name in INDEXES) {
                     if (INDEXES.hasOwnProperty(name)) {
                         $log.debug('installing index', name);
-                        installIndex(name, INDEXES[name].map, INDEXES[name].reduce).then(onSuccess, onFail);
+                        installIndex(name, INDEXES[name].map, INDEXES[name].reduce, completion);
                     }
                 }
                 return deferred.promise;
@@ -224,18 +228,20 @@ angular.module('pouch', [])
                 },
 
                 inject: function (_pouch) {
+                    $log.debug('inject');
                     var newDeferred = $q.defer();
-
+                    $log.debug('inject2');
                     _pouch.info(function (err, info) {
                         if (!err) {
                             $log.debug('injecting:', info);
                             deferred.promise.then(function (dbInstance) {
                                 deferred = newDeferred;
                                 pouch = _pouch;
-                                _initialisePouchDB();
+                                _initialisePouchDB().then(deferred.resolve, deferred.reject);
                             }, newDeferred.reject);
                         }
                         else {
+                            $log.error('error getting info of injected pouchdb:', err);
                             newDeferred.reject(err);
                         }
                     });

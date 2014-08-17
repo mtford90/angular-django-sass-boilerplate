@@ -1,13 +1,16 @@
 angular.module('app.asana.restangular', ['restangular', 'base64'])
 
     // If an asana http request, pull the API key from settings service and inject into the headers.
-    .factory('APIKeyInterceptor', function ($base64, $log, $q, SettingsService, ASANA_ERRORS, $rootScope) {
+    .factory('APIKeyInterceptor', function ($base64, jlog, $q, SettingsService, ASANA_ERRORS, $rootScope) {
+        var $log = jlog.loggerWithName('APIKeyInterceptor');
+
         return {
             request: function (config) {
-                if (config.url.substring(0, 6) == "/asana") {
+                $log.debug('intercepting request with config:', config);
+                if (config.url.substring(0, 22) == "http://localhost/asana") {
                     var settings = $rootScope.settings;
-                    $log.debug('settings:', settings, $rootScope);
                     var apiKey = settings.asanaApiKey;
+                    $log.debug('executing request with apiKey', apiKey);
                     if (apiKey) {
                         apiKey = apiKey.trim();
                         if (apiKey.length) {
@@ -33,12 +36,13 @@ angular.module('app.asana.restangular', ['restangular', 'base64'])
     })
 
     .config(function ($httpProvider) {
+        console.debug('configuring $httpProvider with APIKeyInterceptor');
         $httpProvider.interceptors.push('APIKeyInterceptor');
     })
 
     .factory('AsanaRestangular', function (Restangular) {
         return Restangular.withConfig(function (RestangularConfigurer) {
-            RestangularConfigurer.setBaseUrl('/asana');
+            RestangularConfigurer.setBaseUrl('http://localhost/asana');
 //            RestangularConfigurer.addResponseInterceptor(function (data, op, what, url) {
             RestangularConfigurer.addResponseInterceptor(function (data) {
                 // Extract the data field.

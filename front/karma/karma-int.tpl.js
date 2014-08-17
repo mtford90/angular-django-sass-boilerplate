@@ -1,6 +1,6 @@
 module.exports = function ( karma ) {
   karma.set({
-    /**
+    /** 
      * From where to look for files, starting with the location of this file.
      */
     basePath: '../',
@@ -12,14 +12,15 @@ module.exports = function ( karma ) {
       'node_modules/es5-shim/es5-shim.min.js', // Otherwise PouchDB doesn't work.
       'node_modules/q/q.js', // For mocking $q
       'karma/test-global.js',
-        'vendor/angular-mocks/angular-mocks.js',
+      'karma/int.config.js',
+
       <% scripts.forEach( function ( file ) { %>'<%= file %>',
       <% }); %>
       'src/**/*.js'
     ],
     exclude: [
       'src/assets/**/*.js',
-      'src/**/*.int.spec.js',
+      'src/**/*.spec.js',
       'src/common/useful.js'
     ],
     frameworks: [ 'mocha', 'chai' ],
@@ -42,7 +43,7 @@ module.exports = function ( karma ) {
     runnerPort: 9100,
     urlRoot: '/',
 
-    /**
+    /** 
      * Disable file watching by default.
      */
     autoWatch: false,
