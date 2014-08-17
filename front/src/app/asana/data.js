@@ -1,4 +1,11 @@
-angular.module('app.asana.data', ['app.asana.restangular', 'restangular', 'pouch', 'LocalStorageModule'])
+angular.module('app.asana.data', [
+    'app.asana.restangular',
+    'restangular',
+    'pouch',
+    'LocalStorageModule',
+    'app.logging',
+    'app.settings'
+])
 
 /**
  * Mediates between local storage of Asana data and remote.
@@ -222,6 +229,41 @@ angular.module('app.asana.data', ['app.asana.restangular', 'restangular', 'pouch
             clearActiveUser: AsanaLocal.clearActiveUser,
             getUser: getUser,
             completeTask: function (task, callback) {
+
+                var localError;
+                var remoteError;
+
+                /**
+                 * Check for both remote & local completion, failed or otherwise.
+                 */
+                function finalise() {
+                    var localFinished = localError || localError === null;
+                    var remoteFinished = remoteError || remoteError === null;
+                    if (localFinished && remoteFinished) {
+                        if (localError || remoteError) {
+                            callback({
+                                localError: localError,
+                                remoteError: remoteError
+                            });
+                        }
+                        else {
+                            task.completed = true;
+                            callback(null, task);
+                        }
+                    }
+                }
+
+                AsanaLocal.completeTask(task, function (err) {
+                    localError = err;
+                    if (!localError) localError = null;
+                    finalise();
+                });
+
+                AsanaRemote.completeTask(task, function (err) {
+                    remoteError = err;
+                    if (!remoteError) remoteError = null;
+                    finalise();
+                });
 
             }
         };

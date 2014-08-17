@@ -285,7 +285,7 @@ describe('app.asana.data', function () {
             }, done);
         });
 
-        describe.only('completion', function () {
+        describe('completion', function () {
             it('using object', function (done) {
                 AsanaLocal.addTasks([
                     {id: '5', name: 'a task'}

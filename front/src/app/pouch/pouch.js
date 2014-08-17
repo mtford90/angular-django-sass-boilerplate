@@ -36,7 +36,14 @@ angular.module('pouch', [])
             },
             active_tasks: {
                 map: function (doc) {
-                    if (doc.type == 'task' && doc.active) {
+                    if (doc.type == 'task' && doc.active ) {
+                        emit(doc._id, doc);
+                    }
+                }
+            },
+            active_uncompleted_tasks: {
+                map: function (doc) {
+                    if (doc.type == 'task' && doc.active && !doc.completed) {
                         emit(doc._id, doc);
                     }
                 }

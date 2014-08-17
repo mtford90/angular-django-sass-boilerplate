@@ -84,7 +84,7 @@ angular.module('app.asana.data')
             return def.promise;
         }
 
-        function setActiveUser(user) {
+        function setActiveUser(user, callback) {
             var setActiveUserDeferred = $q.defer();
             clearActiveUser().then(function () {
                 user.type = 'user';
@@ -94,16 +94,21 @@ angular.module('app.asana.data')
                 lazyPouchDB.getPromise().then(function (pouch) {
                     pouch.post(user, function (err, resp) {
                         if (err) {
+                            if (callback) callback(err);
                             setActiveUserDeferred.reject(err);
                         }
                         else {
                             user._id = resp.id;
                             user._rev = resp.rev;
+                            if (callback) callback(null, user);
                             setActiveUserDeferred.resolve(user);
                         }
                     });
                 });
-            }, setActiveUserDeferred.reject);
+            }, function (err) {
+                if (callback ) callback(err);
+                setActiveUserDeferred.reject(err);
+            });
             return setActiveUserDeferred.promise;
         }
 
