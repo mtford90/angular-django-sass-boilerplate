@@ -27,6 +27,7 @@ angular.module('app.asana.data', [
             return deferred.promise;
         }
 
+
         /**
          * Grab all tasks from local if available, otherwise fetch from asana API.
          * @param workspaceId
@@ -223,6 +224,7 @@ angular.module('app.asana.data', [
             watch();
         }
 
+
         return {
             reset: reset,
             getTasks: getTasks,
@@ -230,41 +232,76 @@ angular.module('app.asana.data', [
             getUser: getUser,
             completeTask: function (task, callback) {
 
-                var localError;
-                var remoteError;
+                var tasks = $rootScope.tasks.tasks;
+                var index = tasks.indexOf(task);
+                if (index > -1) {
+                    tasks.splice(index, 1);
 
-                /**
-                 * Check for both remote & local completion, failed or otherwise.
-                 */
-                function finalise() {
-                    var localFinished = localError || localError === null;
-                    var remoteFinished = remoteError || remoteError === null;
-                    if (localFinished && remoteFinished) {
-                        if (localError || remoteError) {
-                            callback({
-                                localError: localError,
-                                remoteError: remoteError
-                            });
-                        }
-                        else {
-                            task.completed = true;
-                            callback(null, task);
+                    var localError;
+                    var remoteError;
+
+                    /**
+                     * Check for both remote & local completion, failed or otherwise.
+                     */
+                    function finalise() {
+                        var localFinished = localError || localError === null;
+                        var remoteFinished = remoteError || remoteError === null;
+                        if (localFinished && remoteFinished) {
+                            if (localError || remoteError) {
+                                if (callback) callback({
+                                    localError: localError,
+                                    remoteError: remoteError
+                                });
+                            }
+                            else {
+                                task.completed = true;
+                                if (callback) callback(null, task);
+                            }
                         }
                     }
+
+                    AsanaLocal.completeTask(task, function (err, resp) {
+                        localError = err;
+                        if (!localError) {
+                            localError = null;
+                            task._id = resp.id;
+                            task._rev = resp.rev;
+                        }
+                        finalise();
+                    });
+
+                    AsanaRemote.completeTask(task, function (err) {
+                        remoteError = err;
+                        if (!remoteError) {
+                            remoteError = null;
+                        }
+                        finalise();
+                    });
+
+                }
+                else {
+                    $log.error('Task doesnt exist', task);
+                    if (callback) callback('Task doesnt exist');
                 }
 
-                AsanaLocal.completeTask(task, function (err) {
-                    localError = err;
-                    if (!localError) localError = null;
-                    finalise();
-                });
+            },
+            refreshWorkspace: function (workspaceId, callback) {
+                if (!$rootScope.tasks.refreshing) {
+                    $log.debug('refreshWorkspace');
+                    $rootScope.tasks.refreshing = true;
+                    AsanaRemote.getTasks(workspaceId, function (err, tasks) {
+                        var numFinished = 0;
+                        _.each(tasks, function (task) {
+                            AsanaLocal.updateTask(task, function () {
+                                numFinished++;
+                            });
+                        });
+                        $log.debug('refreshWorkspace, got tasks', tasks);
+                        $rootScope.tasks.refreshing = false;
 
-                AsanaRemote.completeTask(task, function (err) {
-                    remoteError = err;
-                    if (!remoteError) remoteError = null;
-                    finalise();
-                });
+                    });
 
+                }
             }
         };
     })

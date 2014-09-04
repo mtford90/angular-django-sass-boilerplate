@@ -51,9 +51,9 @@ angular.module('app.asana.data')
             includeActiveTasks = includeActiveTasks === undefined ? true : includeActiveTasks;
             var deferred = $q.defer();
             lazyPouchDB.getPromise().then(function (pouch) {
-                var index = includeActiveTasks ? 'asana_tasks_index_workspace' : 'asana_tasks_index_workspace_inactive_tasks';
+                var index = includeActiveTasks ? 'asana_tasks_index_workspace_incomplete' : 'asana_tasks_index_workspace_inactive_tasks_incomplete';
                 pouch.query(index, {key: workspaceId}).then(function (res) {
-                    $log.debug('asana_tasks_index_workspace:', res);
+                    $log.debug(index + ':', res);
                     var processed = processRows(res.rows);
                     $log.debug('processed tasks:', processed);
                     deferred.resolve(processed);
@@ -126,7 +126,7 @@ angular.module('app.asana.data')
                     }
                     else {
                         if (resp.rows.length) {
-                            err = 'task with asana id' + task.id.toString() + ' already exists';
+                            err = 'task with asana id "' + task.id.toString() + '" already exists';
                             if (callback) callback(err);
                             deferred.reject(err);
                         }
@@ -217,59 +217,6 @@ angular.module('app.asana.data')
             return deferred.promise;
         }
 
-        /**
-         * Set key to value in PouchDB eventually, resolving conflicts.
-         *
-         * @param task either the identifier of a task or an object with _id & _rev
-         * @param key the attribute we want to set
-         * @param value the vlaue of the attribute
-         * @param callback
-         */
-        function setEventually(task, key, value, callback) {
-            lazyPouchDB.getPromise(function (err, pouch) {
-                if (err) {
-                    callback(err);
-                }
-                else {
-                    function getAndThenPut(taskId) {
-                        pouch.get(taskId, function (err, task) {
-                            if (err) {
-                                callback(err);
-                            }
-                            else {
-                                task[key] = value;
-                                put(task);
-                            }
-                        });
-                    }
-                    function put(task) {
-                        pouch.put(task, function (err, resp) {
-                            if (err) {
-                                if (err.status === 409) {
-                                    getAndThenPut(task._id);
-                                }
-                                else {
-                                    callback(err);
-                                }
-                            }
-                            else {
-                                task._id = resp.id;
-                                task._rev = resp.rev;
-                                callback(null, task);
-                            }
-                        });
-                    }
-                }
-                if (task._id) {
-                    task[key] = value;
-                    put(task);
-                }
-                else {
-                    getAndThenPut(task);
-                }
-            });
-        }
-
         return {
             getUser: getUser,
             getTasks: getTasks,
@@ -282,7 +229,10 @@ angular.module('app.asana.data')
             completeTask: function (task, callback) {
                 var value = true;
                 var key = 'completed';
-                setEventually(task, key, value, callback);
+                lazyPouchDB.setEventually(task, key, value, callback);
+            },
+            updateTask: function (task, callback) {
+                lazyPouchDB._setEventually(task, task, callback);
             }
         };
     })

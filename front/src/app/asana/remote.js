@@ -174,6 +174,7 @@ angular.module('app.asana.data')
          * with workspaceId
          * @param workspaceId
          * @returns promise
+         * @param callback
          */
         function getTasks(workspaceId, callback) {
             var deferred = $q.defer();

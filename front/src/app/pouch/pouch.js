@@ -20,9 +20,23 @@ angular.module('pouch', [])
                     }
                 }
             },
+            asana_tasks_index_workspace_incomplete: {
+                map: function (doc) {
+                    if (doc.type == 'task' && doc.source == 'asana' && !doc.completed) {
+                        emit(doc.workspaceId, doc);
+                    }
+                }
+            },
             asana_tasks_index_workspace_inactive_tasks: {
                 map: function (doc) {
                     if (doc.type == 'task' && !doc.active && doc.source == 'asana') {
+                        emit(doc.workspaceId, doc);
+                    }
+                }
+            },
+            asana_tasks_index_workspace_inactive_tasks_incomplete: {
+                map: function (doc) {
+                    if (doc.type == 'task' && !doc.active && doc.source == 'asana' && !doc.completed) {
                         emit(doc.workspaceId, doc);
                     }
                 }
@@ -218,22 +232,91 @@ angular.module('pouch', [])
                 return retryDeferred.promise;
             }
 
+            /**
+             * Set key to value in PouchDB eventually, resolving conflicts.
+             *
+             * @param doc either the identifier of a doc or an object with _id & _rev
+             * @param key the attribute we want to set
+             * @param value the vlaue of the attribute
+             * @param callback
+             */
+            function setEventually(doc, key, value, callback) {
+                var updates = {};
+                updates[key] = value;
+                return _setEventually(doc, updates, callback);
+            }
+
+            function _setEventually(doc, updates, callback) {
+
+                function updateDoc (doc) {
+                    for (var key in updates) {
+                        if (updates.hasOwnProperty(key)) {
+                            doc[key] = updates[key];
+                        }
+                    }
+                }
+
+                getPromise(function (err, pouch) {
+                    if (err) {
+                        callback(err);
+                    }
+                    else {
+                        function getAndThenPut(ident) {
+                            pouch.get(ident, function (err, doc) {
+                                if (err) {
+                                    callback(err);
+                                }
+                                else {
+                                    updateDoc(doc);
+                                    put(doc);
+                                }
+                            });
+                        }
+                        function put(doc) {
+                            pouch.put(doc, function (err, resp) {
+                                if (err) {
+                                    if (err.status === 409) {
+                                        getAndThenPut(doc._id);
+                                    }
+                                    else {
+                                        callback(err);
+                                    }
+                                }
+                                else {
+                                    doc._id = resp.id;
+                                    doc._rev = resp.rev;
+                                    callback(null, doc);
+                                }
+                            });
+                        }
+                    }
+                    if (doc._id) {
+                        updateDoc(doc);
+                        put(doc);
+                    }
+                    else {
+                        getAndThenPut(doc);
+                    }
+                });
+            }
+
             initialisePouchDB();
 
-            return {
-                getPromise: function (callback) {
-                    if (deferred) {
-                        if (callback) {
-                            deferred.promise.then(function (pouch) {
-                                callback(null, pouch);
-                            }, callback);
-                        }
-                        return deferred.promise;
+            function getPromise (callback) {
+                if (deferred) {
+                    if (callback) {
+                        deferred.promise.then(function (pouch) {
+                            callback(null, pouch);
+                        }, callback);
                     }
-                    if (callback) callback('no promise');
-                    return null;
-                },
+                    return deferred.promise;
+                }
+                if (callback) callback('no promise');
+                return null;
+            }
 
+            return {
+                getPromise: getPromise,
                 inject: function (_pouch) {
                     $log.debug('inject');
                     var newDeferred = $q.defer();
@@ -255,7 +338,9 @@ angular.module('pouch', [])
 
                     return newDeferred.promise;
                 },
-                retryUntilWritten: retryUntilWritten
+                retryUntilWritten: retryUntilWritten,
+                setEventually: setEventually,
+                _setEventually: _setEventually
             };
 
         };

@@ -373,7 +373,7 @@ ul.sidebar .sidebar-list a:hover .menu-icon {
 }
 
 .widget .widget-body table tbody * {
-    font-size: 13px !important;
+    font-size: 13px ;
 }
 
 .widget .widget-body.no-padding .error, .widget .widget-body.no-padding .message {

@@ -6,10 +6,10 @@
     </div>
 </div>
 <div id="current-task">
-    <div ng-if="tasks.tasks.length">
-        {{tasks.tasks[0]}}
+    <div ng-if="activeTasks.activeTasks.length">
+        {{activeTasks.activeTasks[0]}}
     </div>
-    <div ng-if="!tasks.tasks.length">
+    <div ng-if="!activeTasks.activeTasks.length">
         No tasks.
     </div>
 </div>

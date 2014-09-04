@@ -9,6 +9,7 @@ angular.module('app', [
     'app.logging',
     'app.tasks',
     'app.debug',
+    'app.history',
     'ui.router',
     'ui.bootstrap',
     'ngResource',

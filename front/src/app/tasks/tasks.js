@@ -28,7 +28,7 @@ angular.module('app.tasks', [
 //                callback = _.partial(callbackWrapper, callback);
                 lazyPouchDB.getPromise().then(function (pouch) {
                     $log.debug('getActiveTasks: got pouch instance');
-                    pouch.query('active_tasks').then(function (tasks) {
+                    pouch.query('active_uncompleted_tasks').then(function (tasks) {
                         if (callback) {
                             var taskValues = _.pluck(tasks.rows, 'value');
                             $log.debug('getActiveTasks - got tasks:', taskValues);
@@ -44,12 +44,6 @@ angular.module('app.tasks', [
             }
         };
 
-        function callbackWrapper(callback, err, doc) {
-            if (callback) {
-                callback(err, doc);
-            }
-        }
-
         function configureActiveTasksScope() {
             $rootScope.activeTasks = {
                 loadingActiveTasks: true,
@@ -59,7 +53,28 @@ angular.module('app.tasks', [
 
         if (!$rootScope.activeTasks) {
             configureActiveTasksScope();
-            getActiveTasks();
+            getActiveTasks(function (err) {
+                if (!err) {
+                    $log.debug('watching active tasks so can write positions to local storage');
+                    $rootScope.$watchCollection('activeTasks.activeTasks', function (newValue, oldValue) {
+                        for (var idx = 0; idx < newValue.length; idx++) {
+                            var task = newValue[idx];
+                            $log.debug('Writing position for task', idx, task);
+                            lazyPouchDB.setEventually(task, 'position', idx, function (err, task) {
+                                if (err) {
+                                    $log.error('Unable to write position', err);
+                                }
+                                else {
+                                    $log.debug('Wrote position for task', task);
+                                }
+                            });
+                        }
+                    });
+                }
+                else {
+                    $log.error('error getting active tasks:', err);
+                }
+            });
         }
 
         function modifyTaskState(active, taskId, callback) {
@@ -102,20 +117,23 @@ angular.module('app.tasks', [
 
         }
 
-        function getActiveTasks() {
+        function getActiveTasks(callback) {
             $rootScope.activeTasks.loadingActiveTasks = true;
             service.getActiveTasks(function (err, tasks) {
                 $rootScope.activeTasks.loadingActiveTasks = false;
                 if (!err) {
                     $log.debug('got active tasks', tasks);
                     $rootScope.$apply(function () {
-                        $rootScope.activeTasks.activeTasks = tasks;
+                        $rootScope.activeTasks.activeTasks = _.sortBy(tasks, function (doc) { return doc.position; });
+                        if (callback) callback(null, $rootScope.activeTasks.activeTasks);
                     });
                 }
                 else {
+                    if (callback) callback(err);
                     $log.error('error getting active tasks:', err);
                 }
-            })
+            });
+
         }
 
         return service;
@@ -125,8 +143,6 @@ angular.module('app.tasks', [
     .controller('TasksCtrl', function TasksController($scope, $rootScope, AsanaData, Settings, jlog, ActiveTasks) {
 
         var $log = jlog.loggerWithName('TasksCtrl');
-
-
 
         $scope.activateTask = function (task) {
             ActiveTasks.activateTask(task._id, function (err, task) {
@@ -138,6 +154,10 @@ angular.module('app.tasks', [
             var index = asanaTasks.indexOf(task);
             asanaTasks.splice(index, 1);
         };
+
+        $scope.completeTask = AsanaData.completeTask;
+
+        $scope.refresh = AsanaData.refreshWorkspace;
 
         $scope.deactivateTask = function (task) {
             ActiveTasks.deactivateTask(task._id, function (err, task) {
@@ -156,6 +176,13 @@ angular.module('app.tasks', [
                 asanaTasks.push(task);
             }
 
+        };
+
+        $scope.sortableOptions = {
+            axis: 'y',
+            stop: function (e, ui) {
+                $log.debug('stop:', $scope.activeTasks.activeTasks, e);
+            }
         };
 
 
