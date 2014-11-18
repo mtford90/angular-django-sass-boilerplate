@@ -1,4 +1,4 @@
-describe('asana data', function () {
+describe.only('asana data', function () {
 
     var $rootScope, $q, AsanaLocal, AsanaData;
 

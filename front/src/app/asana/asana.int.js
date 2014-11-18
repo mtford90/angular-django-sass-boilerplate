@@ -126,7 +126,7 @@ describe('asana integration', function () {
         });
     });
 
-    it.only('create and complete task', function (done) {
+    it('create and complete task', function (done) {
         AsanaRemote.getUser(function (err, user) {
             if (err) {
                 done(err.errors);
